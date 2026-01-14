@@ -329,14 +329,23 @@
         let deck = null;
         let uploadedImageUrl = null;
         let uploadedImageFilename = null;
+        let editUploadedImageUrl = null;
+        let editUploadedImageFilename = null;
 
         // Load deck on page load
         loadDeck();
 
-        // Image upload
+        // Image upload for adding new scene
         document.getElementById('cardImageInput').addEventListener('change', async (e) => {
             if (e.target.files.length > 0) {
                 await uploadImage(e.target.files[0]);
+            }
+        });
+
+        // Image upload for editing scene
+        document.getElementById('editImageInput').addEventListener('change', async (e) => {
+            if (e.target.files.length > 0) {
+                await uploadImageForEdit(e.target.files[0]);
             }
         });
 
@@ -462,11 +471,124 @@
                     <h3>Scene ${deck.cards.indexOf(card) + 1}</h3>
                     <p>${card.prompt}</p>
                     <div class="card-actions">
+                        <button onclick="editCard('${card.id}')" class="btn btn-primary" style="font-size: 0.9em; padding: 8px 16px; margin-right: 10px;">Edit</button>
                         <button onclick="deleteCard('${card.id}')" class="btn btn-danger" style="font-size: 0.9em; padding: 8px 16px;">Delete</button>
                     </div>
                 `;
                 cardsGrid.appendChild(cardDiv);
             });
+        }
+
+        function editCard(cardId) {
+            const card = deck.cards.find(c => c.id === cardId);
+            if (!card) {
+                alert('Scene not found');
+                return;
+            }
+
+            // Populate edit form
+            document.getElementById('editCardId').value = cardId;
+            document.getElementById('editPrompt').value = card.prompt;
+            
+            // Set current image
+            const editPreview = document.getElementById('editImagePreview');
+            editPreview.src = card.image_url;
+            editPreview.style.display = 'block';
+            
+            // Reset uploaded image for edit
+            editUploadedImageUrl = null;
+            editUploadedImageFilename = null;
+
+            // Show modal
+            document.getElementById('editModal').style.display = 'block';
+        }
+
+        function closeEditModal() {
+            document.getElementById('editModal').style.display = 'none';
+            document.getElementById('editCardForm').reset();
+            document.getElementById('editImagePreview').style.display = 'none';
+            document.getElementById('editStatus').style.display = 'none';
+            editUploadedImageUrl = null;
+            editUploadedImageFilename = null;
+        }
+
+        async function uploadImageForEdit(file) {
+            const formData = new FormData();
+            formData.append('image', file);
+
+            showStatus('editStatus', 'Uploading image...', 'info');
+
+            try {
+                const response = await fetch('/api/upload-image', {
+                    method: 'POST',
+                    body: formData
+                });
+
+                const data = await response.json();
+
+                if (data.success) {
+                    editUploadedImageUrl = data.image_url;
+                    editUploadedImageFilename = data.filename;
+                    document.getElementById('editImagePreview').src = data.image_url;
+                    document.getElementById('editImagePreview').style.display = 'block';
+                    showStatus('editStatus', 'Image uploaded!', 'success');
+                } else {
+                    throw new Error(data.error || 'Upload failed');
+                }
+            } catch (error) {
+                showStatus('editStatus', 'Upload error: ' + error.message, 'error');
+            }
+        }
+
+        // Edit card form submission
+        document.getElementById('editCardForm').addEventListener('submit', async (e) => {
+            e.preventDefault();
+
+            const cardId = document.getElementById('editCardId').value;
+            const prompt = document.getElementById('editPrompt').value.trim();
+
+            if (!prompt) {
+                showStatus('editStatus', 'Please enter a prompt', 'error');
+                return;
+            }
+
+            // Use new image if uploaded, otherwise keep existing
+            const imageUrl = editUploadedImageUrl || deck.cards.find(c => c.id === cardId).image_url;
+            const imageFilename = editUploadedImageFilename || deck.cards.find(c => c.id === cardId).image_filename;
+
+            try {
+                const response = await fetch(`/api/decks/${deckId}/cards/${cardId}`, {
+                    method: 'PUT',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        image_url: imageUrl,
+                        image_filename: imageFilename,
+                        prompt: prompt
+                    })
+                });
+
+                const data = await response.json();
+
+                if (data.success) {
+                    showStatus('editStatus', 'Scene updated successfully!', 'success');
+                    setTimeout(() => {
+                        closeEditModal();
+                        loadDeck();
+                    }, 1000);
+                } else {
+                    showStatus('editStatus', data.error || 'Failed to update scene', 'error');
+                }
+            } catch (error) {
+                showStatus('editStatus', 'Error: ' + error.message, 'error');
+            }
+        });
+
+        // Close modal when clicking outside
+        window.onclick = function(event) {
+            const modal = document.getElementById('editModal');
+            if (event.target === modal) {
+                closeEditModal();
+            }
         }
 
         async function deleteCard(cardId) {

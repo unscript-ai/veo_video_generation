@@ -172,8 +172,36 @@
             margin-bottom: 20px;
             color: #555;
             font-size: 0.9em;
+        }
+
+        .prompt-text {
+            line-height: 1.6;
+        }
+
+        .prompt-text.truncated {
             max-height: 100px;
-            overflow-y: auto;
+            overflow: hidden;
+        }
+
+        .prompt-text.full {
+            max-height: none;
+        }
+
+        .read-more-btn {
+            background: none;
+            border: none;
+            color: #667eea;
+            cursor: pointer;
+            font-size: 0.9em;
+            font-weight: 600;
+            padding: 5px 0;
+            margin-top: 8px;
+            text-decoration: underline;
+            transition: color 0.3s;
+        }
+
+        .read-more-btn:hover {
+            color: #764ba2;
         }
 
         .videos-grid {
@@ -435,12 +463,27 @@
 
                     const totalVideos = scene.videos.length + scene.failed.length;
 
+                    const prompt = scene.card_prompt || 'No prompt';
+                    const hasReadMore = prompt.length > 200;
+                    // Escape HTML and store in data attribute
+                    const escapedPrompt = prompt.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;').replace(/'/g, '&#39;');
+                    
                     sceneSection.innerHTML = `
                         <div class="scene-header">
                             <h3>Scene ${scene.card_index + 1}</h3>
                         </div>
                         ${scene.card_image_url ? `<img src="${scene.card_image_url}" alt="Scene ${scene.card_index + 1}" class="scene-image">` : ''}
-                        <div class="scene-prompt"><strong>Prompt:</strong> ${scene.card_prompt ? scene.card_prompt.substring(0, 200) + (scene.card_prompt.length > 200 ? '...' : '') : 'No prompt'}</div>
+                        <div class="scene-prompt">
+                            <strong>Prompt:</strong>
+                            <div class="prompt-text ${hasReadMore ? 'truncated' : ''}" id="prompt-text-${scene.card_index}">
+                                ${escapedPrompt.length > 200 ? escapedPrompt.substring(0, 200) + '...' : escapedPrompt}
+                            </div>
+                            ${hasReadMore ? `
+                                <button class="read-more-btn" onclick="togglePrompt(${scene.card_index})" id="read-more-btn-${scene.card_index}" data-full-prompt="${escapedPrompt}">
+                                    Read more
+                                </button>
+                            ` : ''}
+                        </div>
                         <div class="videos-grid" id="videos-grid-${scene.card_index}"></div>
                     `;
 
@@ -483,12 +526,28 @@
                         sceneSection = document.createElement('div');
                         sceneSection.className = 'scene-section';
                         sceneSection.id = `scene-${scene.card_index}`;
+                        const prompt = scene.card_prompt || 'No prompt';
+                        const promptTruncated = prompt.length > 200 ? prompt.substring(0, 200) + '...' : prompt;
+                        const hasReadMore = prompt.length > 200;
+                        // Escape HTML and store in data attribute
+                        const escapedPrompt = prompt.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;').replace(/'/g, '&#39;');
+                        
                         sceneSection.innerHTML = `
                             <div class="scene-header">
                                 <h3>Scene ${scene.card_index + 1}</h3>
                             </div>
                             ${scene.card_image_url ? `<img src="${scene.card_image_url}" alt="Scene ${scene.card_index + 1}" class="scene-image">` : ''}
-                            <div class="scene-prompt"><strong>Prompt:</strong> ${scene.card_prompt ? scene.card_prompt.substring(0, 200) + (scene.card_prompt.length > 200 ? '...' : '') : 'No prompt'}</div>
+                            <div class="scene-prompt">
+                                <strong>Prompt:</strong>
+                                <div class="prompt-text ${hasReadMore ? 'truncated' : ''}" id="prompt-text-${scene.card_index}">
+                                    ${escapedPrompt.length > 200 ? escapedPrompt.substring(0, 200) + '...' : escapedPrompt}
+                                </div>
+                                ${hasReadMore ? `
+                                    <button class="read-more-btn" onclick="togglePrompt(${scene.card_index})" id="read-more-btn-${scene.card_index}" data-full-prompt="${escapedPrompt}">
+                                        Read more
+                                    </button>
+                                ` : ''}
+                            </div>
                             <div class="videos-grid" id="videos-grid-${scene.card_index}"></div>
                         `;
                         container.appendChild(sceneSection);
@@ -546,6 +605,33 @@
             const statusEl = document.getElementById('status');
             statusEl.textContent = message;
             statusEl.className = `status-message ${type} show`;
+        }
+
+        function togglePrompt(sceneIndex) {
+            const promptTextEl = document.getElementById(`prompt-text-${sceneIndex}`);
+            const readMoreBtn = document.getElementById(`read-more-btn-${sceneIndex}`);
+            
+            if (!promptTextEl || !readMoreBtn) return;
+            
+            const fullPrompt = readMoreBtn.getAttribute('data-full-prompt');
+            if (!fullPrompt) return;
+            
+            const isTruncated = promptTextEl.classList.contains('truncated');
+            
+            if (isTruncated) {
+                // Expand to show full prompt
+                promptTextEl.innerHTML = fullPrompt;
+                promptTextEl.classList.remove('truncated');
+                promptTextEl.classList.add('full');
+                readMoreBtn.textContent = 'Read less';
+            } else {
+                // Collapse to show truncated prompt
+                const truncated = fullPrompt.length > 200 ? fullPrompt.substring(0, 200) + '...' : fullPrompt;
+                promptTextEl.innerHTML = truncated;
+                promptTextEl.classList.remove('full');
+                promptTextEl.classList.add('truncated');
+                readMoreBtn.textContent = 'Read more';
+            }
         }
     </script>
 </body>
