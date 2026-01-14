@@ -1,0 +1,612 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Video Generation - Veo Video Generator</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding: 20px;
+        }
+
+        .container {
+            max-width: 1400px;
+            margin: 0 auto;
+            background: white;
+            border-radius: 20px;
+            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+            overflow: hidden;
+        }
+
+        .header {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 30px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .header h1 {
+            font-size: 2.5em;
+            margin: 0;
+        }
+
+        .nav-links {
+            display: flex;
+            gap: 15px;
+        }
+
+        .nav-link {
+            color: white;
+            text-decoration: none;
+            padding: 10px 20px;
+            background: rgba(255, 255, 255, 0.2);
+            border-radius: 10px;
+            transition: background 0.3s;
+            font-weight: 600;
+        }
+
+        .nav-link:hover {
+            background: rgba(255, 255, 255, 0.3);
+        }
+
+        .content {
+            padding: 40px;
+        }
+
+        .create-deck-section {
+            background: #f8f9ff;
+            padding: 30px;
+            border-radius: 15px;
+            margin-bottom: 40px;
+        }
+
+        .create-deck-section h2 {
+            margin-bottom: 20px;
+            color: #333;
+        }
+
+        .form-group {
+            margin-bottom: 20px;
+        }
+
+        .form-group label {
+            display: block;
+            margin-bottom: 8px;
+            font-weight: 600;
+            color: #333;
+        }
+
+        .form-group input,
+        .form-group select {
+            width: 100%;
+            padding: 12px 15px;
+            border: 2px solid #e0e0e0;
+            border-radius: 10px;
+            font-size: 1em;
+            transition: border-color 0.3s;
+        }
+
+        .form-group input:focus,
+        .form-group select:focus {
+            outline: none;
+            border-color: #667eea;
+        }
+
+        .form-row {
+            display: grid;
+            grid-template-columns: 2fr 1fr;
+            gap: 20px;
+        }
+
+        .btn {
+            padding: 12px 30px;
+            border: none;
+            border-radius: 10px;
+            font-size: 1em;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s;
+        }
+
+        .btn-primary {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+        }
+
+        .btn-primary:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 10px 25px rgba(102, 126, 234, 0.4);
+        }
+
+        .decks-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(350px, 1fr));
+            gap: 25px;
+        }
+
+        .deck-card {
+            background: white;
+            border: 2px solid #e0e0e0;
+            border-radius: 15px;
+            padding: 25px;
+            transition: all 0.3s;
+        }
+
+        .deck-card:hover {
+            border-color: #667eea;
+            box-shadow: 0 8px 25px rgba(102, 126, 234, 0.2);
+            transform: translateY(-5px);
+        }
+
+        .deck-card h3 {
+            color: #333;
+            margin-bottom: 15px;
+            font-size: 1.3em;
+        }
+
+        .deck-meta {
+            font-size: 0.9em;
+            color: #666;
+            margin-bottom: 15px;
+        }
+
+        .deck-meta span {
+            display: block;
+            margin-bottom: 5px;
+        }
+
+        .deck-status {
+            display: inline-block;
+            padding: 5px 12px;
+            border-radius: 20px;
+            font-size: 0.85em;
+            font-weight: 600;
+            margin-bottom: 15px;
+        }
+
+        .status-draft {
+            background: #e3f2fd;
+            color: #1976d2;
+        }
+
+        .status-generating {
+            background: #fff3e0;
+            color: #f57c00;
+        }
+
+        .status-completed {
+            background: #e8f5e9;
+            color: #388e3c;
+        }
+
+        .deck-actions {
+            display: flex;
+            gap: 10px;
+            flex-wrap: wrap;
+        }
+
+        .btn-small {
+            padding: 8px 16px;
+            font-size: 0.9em;
+        }
+
+        .btn-secondary {
+            background: #e0e0e0;
+            color: #333;
+        }
+
+        .btn-secondary:hover {
+            background: #d0d0d0;
+        }
+
+        .btn-success {
+            background: #4caf50;
+            color: white;
+        }
+
+        .btn-success:hover {
+            background: #45a049;
+        }
+
+        .btn-danger {
+            background: #f44336;
+            color: white;
+        }
+
+        .btn-danger:hover {
+            background: #da190b;
+        }
+
+        .empty-state {
+            text-align: center;
+            padding: 60px 20px;
+            color: #666;
+        }
+
+        .empty-state-icon {
+            font-size: 4em;
+            margin-bottom: 20px;
+        }
+
+        .loading {
+            text-align: center;
+            padding: 40px;
+        }
+
+        .status-message {
+            margin-top: 15px;
+            padding: 12px;
+            border-radius: 8px;
+            display: none;
+        }
+
+        .status-message.success {
+            background: #d4edda;
+            color: #155724;
+        }
+
+        .status-message.error {
+            background: #f8d7da;
+            color: #721c24;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>🎬 Video Generation</h1>
+            <div class="nav-links">
+                <a href="/" class="nav-link">🎬 Generator</a>
+                <a href="/history" class="nav-link">📹 History</a>
+            </div>
+        </div>
+
+        <div class="content">
+            <!-- Create New Video -->
+            <div class="create-deck-section">
+                <h2>Create New Video</h2>
+                <form id="createDeckForm">
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label for="deckName">Video Name</label>
+                            <input type="text" id="deckName" name="deckName" placeholder="Enter video name" required>
+                        </div>
+                        <div class="form-group">
+                            <label for="aspectRatio">Aspect Ratio</label>
+                            <select id="aspectRatio" name="aspectRatio">
+                                <option value="16:9">16:9 (Landscape)</option>
+                                <option value="9:16" selected>9:16 (Portrait)</option>
+                                <option value="Auto">Auto</option>
+                            </select>
+                        </div>
+                    </div>
+                    <button type="submit" class="btn btn-primary">Create Video</button>
+                    <div id="createStatus" class="status-message"></div>
+                </form>
+            </div>
+
+            <!-- Videos List -->
+            <h2 style="margin-bottom: 25px;">Your Videos</h2>
+            <div id="loading" class="loading">
+                <p>Loading decks...</p>
+            </div>
+            <div id="emptyState" class="empty-state" style="display: none;">
+                <div class="empty-state-icon">📭</div>
+                <h2>No Videos Yet</h2>
+                <p>Create your first video above to get started!</p>
+            </div>
+            <div id="decksGrid" class="decks-grid" style="display: none;"></div>
+        </div>
+    </div>
+
+    <script>
+        let decks = [];
+
+        // Load decks on page load
+        loadDecks();
+
+        // Create deck form
+        document.getElementById('createDeckForm').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const name = document.getElementById('deckName').value.trim();
+            const aspectRatio = document.getElementById('aspectRatio').value;
+
+                if (!name) {
+                showStatus('createStatus', 'Please enter a video name', 'error');
+                return;
+            }
+
+            try {
+                const response = await fetch('/api/decks', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ name, aspect_ratio: aspectRatio })
+                });
+
+                const data = await response.json();
+
+                if (data.success) {
+                    showStatus('createStatus', 'Video created successfully!', 'success');
+                    document.getElementById('createDeckForm').reset();
+                    loadDecks();
+                } else {
+                    showStatus('createStatus', data.error || 'Failed to create video', 'error');
+                }
+            } catch (error) {
+                showStatus('createStatus', 'Error: ' + error.message, 'error');
+            }
+        });
+
+        async function loadDecks() {
+            try {
+                const response = await fetch('/api/decks');
+                const data = await response.json();
+
+                if (data.success) {
+                    decks = data.decks;
+                    displayDecks(decks);
+                    // Auto-update failed tasks for existing decks on page load (only once)
+                    if (!window.failedTasksUpdated) {
+                        updateFailedTasks();
+                        window.failedTasksUpdated = true;
+                    }
+                }
+            } catch (error) {
+                console.error('Error loading decks:', error);
+            }
+        }
+
+        async function updateFailedTasks() {
+            try {
+                const response = await fetch('/api/decks/update-failed-tasks', {
+                    method: 'POST'
+                });
+                const data = await response.json();
+                if (data.success && data.total_updated > 0) {
+                    console.log(`Updated ${data.total_updated} failed tasks`);
+                    // Reload decks to show updated counts
+                    loadDecks();
+                }
+            } catch (error) {
+                console.error('Error updating failed tasks:', error);
+            }
+        }
+
+        function displayDecks(decksList) {
+            const loading = document.getElementById('loading');
+            const emptyState = document.getElementById('emptyState');
+            const decksGrid = document.getElementById('decksGrid');
+
+            loading.style.display = 'none';
+
+            if (decksList.length === 0) {
+                emptyState.style.display = 'block';
+                decksGrid.style.display = 'none';
+                return;
+            }
+
+            emptyState.style.display = 'none';
+            decksGrid.style.display = 'grid';
+            decksGrid.innerHTML = '';
+
+            decksList.forEach(deck => {
+                const card = createDeckCard(deck);
+                decksGrid.appendChild(card);
+            });
+
+            // Auto-start status checking for generating decks
+            autoCheckGeneratingDecks();
+        }
+
+        function createDeckCard(deck) {
+            const div = document.createElement('div');
+            div.className = 'deck-card';
+
+            const cardCount = deck.cards ? deck.cards.length : 0;
+            // Calculate successful video count - ensure video_urls exists and is an array
+            const successfulCount = deck.cards ? deck.cards.reduce((sum, c) => {
+                const urls = c.video_urls || [];
+                return sum + (Array.isArray(urls) ? urls.length : 0);
+            }, 0) : 0;
+            
+            // Calculate failed video count
+            const failedCount = deck.cards ? deck.cards.reduce((sum, c) => {
+                const failedDetails = c.failed_tasks_details || [];
+                return sum + (Array.isArray(failedDetails) ? failedDetails.length : 0);
+            }, 0) : 0;
+            
+            // Calculate total expected videos (2 per card)
+            const totalExpected = cardCount * 2;
+            const totalVideos = successfulCount + failedCount;
+            
+            const statusClass = `status-${deck.status || 'draft'}`;
+            
+            // Debug logging
+            console.log(`Deck ${deck.name}: ${successfulCount} successful, ${failedCount} failed, status: ${deck.status}`);
+
+            div.innerHTML = `
+                <h3>${deck.name}</h3>
+                <div class="deck-meta">
+                    <span><strong>Aspect Ratio:</strong> ${deck.aspect_ratio || 'N/A'}</span>
+                    <span><strong>Status:</strong> ${(deck.status || 'draft').toUpperCase()}</span>
+                    <span><strong>Total Scenes:</strong> ${cardCount}</span>
+                    <span><strong>Total Videos:</strong> ${totalVideos}</span>
+                    ${totalVideos > 0 ? `<span><strong>Successful:</strong> <span style="color: #28a745; font-weight: bold;">${successfulCount}</span></span>` : ''}
+                    ${failedCount > 0 ? `<span><strong>Failed:</strong> <span style="color: #dc3545; font-weight: bold;">${failedCount}</span></span>` : ''}
+                    <span><strong>Created:</strong> ${new Date(deck.created_at).toLocaleDateString()}</span>
+                </div>
+                <div class="deck-status ${statusClass}">${(deck.status || 'draft').toUpperCase()}</div>
+                <div class="deck-actions">
+                    <a href="/deck/${deck.id}" class="btn btn-primary btn-small">Edit Scenes</a>
+                    ${totalVideos > 0 ? 
+                        `<a href="/deck/${deck.id}/results" class="btn btn-success btn-small">Results (${totalVideos})</a>` : 
+                        ''
+                    }
+                    ${deck.status === 'generating' ? 
+                        `<button onclick="checkDeckStatus('${deck.id}', true)" class="btn btn-secondary btn-small" title="Check for completed videos">Check Videos</button>` : 
+                        ''
+                    }
+                    ${cardCount > 0 && (deck.status === 'draft' || (deck.status === 'generating' && totalVideos === 0)) ? 
+                        `<button onclick="generateDeck('${deck.id}')" class="btn btn-primary btn-small">${deck.status === 'generating' ? 'Regenerate' : 'Generate'}</button>` : 
+                        ''
+                    }
+                    <button onclick="deleteDeck('${deck.id}', '${deck.name}')" class="btn btn-danger btn-small" title="Delete this video">Delete</button>
+                </div>
+            `;
+
+            return div;
+        }
+
+        async function generateDeck(deckId) {
+            if (!confirm('Generate 2 videos for each scene in this video project?')) {
+                return;
+            }
+
+            try {
+                const response = await fetch(`/api/decks/${deckId}/generate`, {
+                    method: 'POST'
+                });
+
+                const data = await response.json();
+
+                if (data.success) {
+                    alert(`Generation started! ${data.task_count} videos will be generated (2 per scene).`);
+                    loadDecks();
+                    // Start auto-checking status
+                    startStatusChecking(deckId);
+                } else {
+                    alert('Error: ' + (data.error || 'Failed to start generation'));
+                }
+            } catch (error) {
+                alert('Error: ' + error.message);
+            }
+        }
+
+        async function checkDeckStatus(deckId, showAlert = false) {
+            try {
+                const response = await fetch(`/api/decks/${deckId}/check-status`, {
+                    method: 'POST'
+                });
+
+                const data = await response.json();
+
+                if (data.success) {
+                    if (data.updated_videos > 0) {
+                        if (showAlert) {
+                            alert(`Found and processed ${data.updated_videos} new video(s)!`);
+                        }
+                        console.log(`Updated ${data.updated_videos} videos for deck ${deckId}`);
+                    } else if (showAlert) {
+                        alert('No new videos found. Videos may still be generating.');
+                    }
+                    loadDecks(); // Always refresh to update status
+                } else {
+                    if (showAlert) {
+                        alert('Error: ' + (data.error || 'Failed to check status'));
+                    }
+                    console.error('Error checking status:', data.error);
+                }
+            } catch (error) {
+                if (showAlert) {
+                    alert('Error: ' + error.message);
+                }
+                console.error('Error checking status:', error);
+            }
+        }
+
+        const statusCheckIntervals = {};
+
+        function startStatusChecking(deckId) {
+            // Clear any existing interval for this deck
+            if (statusCheckIntervals[deckId]) {
+                clearInterval(statusCheckIntervals[deckId]);
+            }
+
+            // Check status every 30 seconds (reduced frequency to reduce server load)
+            statusCheckIntervals[deckId] = setInterval(() => {
+                checkDeckStatus(deckId, false); // Silent background check
+            }, 30000); // Changed from 10s to 30s
+
+            // Also check immediately
+            checkDeckStatus(deckId, false);
+        }
+
+        // Auto-start status checking for generating decks
+        function autoCheckGeneratingDecks() {
+            decks.forEach(deck => {
+                if (deck.status === 'generating' && !statusCheckIntervals[deck.id]) {
+                    startStatusChecking(deck.id);
+                } else if (deck.status !== 'generating' && statusCheckIntervals[deck.id]) {
+                    clearInterval(statusCheckIntervals[deck.id]);
+                    delete statusCheckIntervals[deck.id];
+                }
+            });
+        }
+
+        async function deleteDeck(deckId, deckName) {
+            const confirmMessage = `Are you sure you want to delete "${deckName}"?\n\nThis will permanently delete the video and all its scenes. This action cannot be undone.`;
+            
+            if (!confirm(confirmMessage)) {
+                return;
+            }
+
+            try {
+                const response = await fetch(`/api/decks/${deckId}`, {
+                    method: 'DELETE'
+                });
+
+                const data = await response.json();
+
+                if (data.success) {
+                    alert(`Video "${deckName}" deleted successfully!`);
+                    loadDecks(); // Refresh the list
+                } else {
+                    alert('Error: ' + (data.error || 'Failed to delete video'));
+                }
+            } catch (error) {
+                alert('Error: ' + error.message);
+            }
+        }
+
+        function showStatus(elementId, message, type) {
+            const element = document.getElementById(elementId);
+            element.textContent = message;
+            element.className = `status-message ${type}`;
+            element.style.display = 'block';
+
+            if (type === 'success') {
+                setTimeout(() => {
+                    element.style.display = 'none';
+                }, 3000);
+            }
+        }
+
+        // Auto-refresh decks every 3 seconds if any are generating
+        setInterval(() => {
+            const hasGenerating = decks.some(d => d.status === 'generating' || d.status === 'draft');
+            if (hasGenerating) {
+                loadDecks();
+            }
+        }, 3000);
+        
+        // Also refresh immediately when page becomes visible (user switches tabs back)
+        document.addEventListener('visibilitychange', () => {
+            if (!document.hidden) {
+                loadDecks();
+            }
+        });
+    </script>
+</body>
+</html>
+

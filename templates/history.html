@@ -1,0 +1,241 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Video History - Veo Video Generator</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding: 20px;
+        }
+
+        .container {
+            max-width: 1400px;
+            margin: 0 auto;
+            background: white;
+            border-radius: 20px;
+            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+            overflow: hidden;
+        }
+
+        .header {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 30px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .header h1 {
+            font-size: 2.5em;
+            margin: 0;
+        }
+
+        .nav-links {
+            display: flex;
+            gap: 15px;
+        }
+
+        .nav-link {
+            color: white;
+            text-decoration: none;
+            padding: 10px 20px;
+            background: rgba(255, 255, 255, 0.2);
+            border-radius: 10px;
+            transition: background 0.3s;
+            font-weight: 600;
+        }
+
+        .nav-link:hover {
+            background: rgba(255, 255, 255, 0.3);
+        }
+
+        .content {
+            padding: 40px;
+        }
+
+        .videos-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(350px, 1fr));
+            gap: 30px;
+            margin-top: 30px;
+        }
+
+        .video-card {
+            background: #f8f9ff;
+            border-radius: 15px;
+            padding: 20px;
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
+            transition: transform 0.3s;
+        }
+
+        .video-card:hover {
+            transform: translateY(-5px);
+        }
+
+        .video-card video {
+            width: 100%;
+            border-radius: 10px;
+            margin-bottom: 15px;
+        }
+
+        .video-card h3 {
+            margin-bottom: 10px;
+            color: #333;
+            font-size: 1.1em;
+        }
+
+        .video-card p {
+            color: #666;
+            font-size: 0.9em;
+            margin-bottom: 5px;
+        }
+
+        .video-card .prompt {
+            background: #fff;
+            padding: 10px;
+            border-radius: 8px;
+            margin-top: 10px;
+            font-size: 0.85em;
+            color: #555;
+            max-height: 100px;
+            overflow-y: auto;
+        }
+
+        .loading {
+            text-align: center;
+            padding: 40px;
+            color: #666;
+        }
+
+        .empty-state {
+            text-align: center;
+            padding: 60px;
+            color: #666;
+        }
+
+        .empty-state h2 {
+            margin-bottom: 10px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>📹 Video History</h1>
+            <div class="nav-links">
+                <a href="/" class="nav-link">🎬 Generator</a>
+                <a href="/decks" class="nav-link">🎬 Video Generation</a>
+            </div>
+        </div>
+
+        <div class="content">
+            <h2>All Generated Videos</h2>
+            <div id="loading" class="loading">
+                <p>Loading history...</p>
+            </div>
+            <div id="videosGrid" class="videos-grid"></div>
+            <div id="emptyState" class="empty-state" style="display: none;">
+                <h2>No videos yet</h2>
+                <p>Generate your first video to see it here!</p>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        async function loadHistory() {
+            try {
+                console.log('Loading history...');
+                const response = await fetch('/api/video-history');
+                
+                if (!response.ok) {
+                    throw new Error(`HTTP error! status: ${response.status}`);
+                }
+                
+                const data = await response.json();
+                console.log('History data received:', data);
+
+                document.getElementById('loading').style.display = 'none';
+
+                if (data.success && data.history && data.history.length > 0) {
+                    console.log(`Displaying ${data.history.length} videos`);
+                    displayVideos(data.history);
+                } else {
+                    console.log('No videos found, showing empty state');
+                    document.getElementById('emptyState').style.display = 'block';
+                }
+            } catch (error) {
+                console.error('Error loading history:', error);
+                const loadingEl = document.getElementById('loading');
+                loadingEl.innerHTML = '<p style="color: red;">Error loading history: ' + error.message + '</p>';
+                loadingEl.style.display = 'block';
+            }
+        }
+
+        function displayVideos(videos) {
+            console.log('Displaying videos:', videos);
+            const grid = document.getElementById('videosGrid');
+            if (!grid) {
+                console.error('videosGrid element not found!');
+                return;
+            }
+            
+            grid.innerHTML = '';
+
+            videos.forEach((video, index) => {
+                try {
+                    const card = document.createElement('div');
+                    card.className = 'video-card';
+
+                    const videoUrl = video.video_urls && video.video_urls.length > 0 ? video.video_urls[0] : null;
+                    const prompt = video.prompt || 'No prompt available';
+                    const createdAt = video.created_at ? new Date(video.created_at).toLocaleString() : 'Unknown date';
+
+                    card.innerHTML = `
+                        ${videoUrl ? `<video controls preload="metadata"><source src="${videoUrl}" type="video/mp4"></video>` : '<p>No video available</p>'}
+                        <h3>Video ${video.task_id ? video.task_id.substring(0, 8) : 'N/A'}</h3>
+                        <p><strong>Created:</strong> ${createdAt}</p>
+                        ${video.aspect_ratio ? `<p><strong>Aspect Ratio:</strong> ${video.aspect_ratio}</p>` : ''}
+                        ${video.resolution ? `<p><strong>Resolution:</strong> ${video.resolution}</p>` : ''}
+                        <div class="prompt"><strong>Prompt:</strong> ${prompt.substring(0, 200)}${prompt.length > 200 ? '...' : ''}</div>
+                    `;
+
+                    grid.appendChild(card);
+                } catch (error) {
+                    console.error(`Error displaying video ${index}:`, error);
+                }
+            });
+        }
+
+        // Load history on page load - multiple fallbacks
+        if (document.readyState === 'loading') {
+            document.addEventListener('DOMContentLoaded', function() {
+                console.log('DOM loaded, starting history load...');
+                loadHistory();
+            });
+        } else {
+            // DOM is already loaded
+            console.log('DOM already loaded, starting history load...');
+            loadHistory();
+        }
+        
+        // Additional fallback - try after a short delay
+        setTimeout(function() {
+            if (document.getElementById('loading') && document.getElementById('loading').style.display !== 'none') {
+                console.log('Fallback: Loading history after timeout...');
+                loadHistory();
+            }
+        }, 100);
+    </script>
+</body>
+</html>

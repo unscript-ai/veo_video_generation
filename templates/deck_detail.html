@@ -1,0 +1,509 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Video Detail - Veo Video Generator</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding: 20px;
+        }
+
+        .container {
+            max-width: 1400px;
+            margin: 0 auto;
+            background: white;
+            border-radius: 20px;
+            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+            overflow: hidden;
+        }
+
+        .header {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 30px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .header h1 {
+            font-size: 2.5em;
+            margin: 0;
+        }
+
+        .nav-link {
+            color: white;
+            text-decoration: none;
+            padding: 10px 20px;
+            background: rgba(255, 255, 255, 0.2);
+            border-radius: 10px;
+            transition: background 0.3s;
+            font-weight: 600;
+        }
+
+        .nav-link:hover {
+            background: rgba(255, 255, 255, 0.3);
+        }
+
+        .content {
+            padding: 40px;
+        }
+
+        .deck-info {
+            background: #f8f9ff;
+            padding: 25px;
+            border-radius: 15px;
+            margin-bottom: 30px;
+        }
+
+        .deck-info h2 {
+            margin-bottom: 10px;
+            color: #333;
+        }
+
+        .deck-info p {
+            color: #666;
+            margin-bottom: 5px;
+        }
+
+        .add-card-section {
+            background: #f8f9ff;
+            padding: 30px;
+            border-radius: 15px;
+            margin-bottom: 40px;
+        }
+
+        .add-card-section h2 {
+            margin-bottom: 20px;
+            color: #333;
+        }
+
+        .form-group {
+            margin-bottom: 20px;
+        }
+
+        .form-group label {
+            display: block;
+            margin-bottom: 8px;
+            font-weight: 600;
+            color: #333;
+        }
+
+        .form-group input,
+        .form-group textarea {
+            width: 100%;
+            padding: 12px 15px;
+            border: 2px solid #e0e0e0;
+            border-radius: 10px;
+            font-size: 1em;
+            transition: border-color 0.3s;
+            font-family: inherit;
+        }
+
+        .form-group textarea {
+            resize: vertical;
+            min-height: 120px;
+        }
+
+        .form-group input:focus,
+        .form-group textarea:focus {
+            outline: none;
+            border-color: #667eea;
+        }
+
+        .upload-area {
+            border: 3px dashed #667eea;
+            border-radius: 15px;
+            padding: 30px;
+            text-align: center;
+            background: white;
+            cursor: pointer;
+            transition: all 0.3s;
+        }
+
+        .upload-area:hover {
+            background: #f0f2ff;
+        }
+
+        .upload-area input[type="file"] {
+            display: none;
+        }
+
+        .upload-icon {
+            font-size: 2.5em;
+            margin-bottom: 10px;
+        }
+
+        .preview-image {
+            max-width: 100%;
+            max-height: 200px;
+            border-radius: 10px;
+            margin-top: 15px;
+        }
+
+        .btn {
+            padding: 12px 30px;
+            border: none;
+            border-radius: 10px;
+            font-size: 1em;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s;
+        }
+
+        .btn-primary {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+        }
+
+        .btn-primary:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 10px 25px rgba(102, 126, 234, 0.4);
+        }
+
+        .btn-danger {
+            background: #f44336;
+            color: white;
+        }
+
+        .btn-danger:hover {
+            background: #da190b;
+        }
+
+        .cards-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+            gap: 25px;
+        }
+
+        .card-item {
+            background: white;
+            border: 2px solid #e0e0e0;
+            border-radius: 15px;
+            padding: 20px;
+            transition: all 0.3s;
+        }
+
+        .card-item:hover {
+            border-color: #667eea;
+            box-shadow: 0 8px 25px rgba(102, 126, 234, 0.2);
+        }
+
+        .card-item img {
+            width: 100%;
+            height: 150px;
+            object-fit: cover;
+            border-radius: 10px;
+            margin-bottom: 15px;
+        }
+
+        .card-item h3 {
+            color: #333;
+            margin-bottom: 10px;
+            font-size: 1.1em;
+        }
+
+        .card-item p {
+            color: #666;
+            font-size: 0.9em;
+            margin-bottom: 15px;
+            display: -webkit-box;
+            -webkit-line-clamp: 3;
+            -webkit-box-orient: vertical;
+            overflow: hidden;
+        }
+
+        .card-actions {
+            display: flex;
+            gap: 10px;
+        }
+
+        .status-message {
+            margin-top: 15px;
+            padding: 12px;
+            border-radius: 8px;
+            display: none;
+        }
+
+        .status-message.success {
+            background: #d4edda;
+            color: #155724;
+        }
+
+        .status-message.error {
+            background: #f8d7da;
+            color: #721c24;
+        }
+
+        .empty-state {
+            text-align: center;
+            padding: 40px;
+            color: #666;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1 id="deckTitle">Video Detail</h1>
+            <a href="/decks" class="nav-link">← Back to Videos</a>
+        </div>
+
+        <div class="content">
+            <div id="deckInfo" class="deck-info"></div>
+
+            <!-- Add Scene Section -->
+            <div class="add-card-section">
+                <h2>Add New Scene</h2>
+                <form id="addCardForm">
+                    <div class="form-group">
+                        <label>Upload Image</label>
+                        <div class="upload-area" onclick="document.getElementById('cardImageInput').click()">
+                            <div class="upload-icon">📸</div>
+                            <p>Click to upload or drag and drop</p>
+                            <input type="file" id="cardImageInput" accept="image/*" required>
+                            <img id="cardImagePreview" class="preview-image" style="display: none;">
+                        </div>
+                    </div>
+                    <div class="form-group">
+                        <label for="cardPrompt">Prompt</label>
+                        <textarea id="cardPrompt" name="prompt" placeholder="Enter video prompt..." required></textarea>
+                    </div>
+                    <button type="submit" class="btn btn-primary">Add Scene</button>
+                    <div id="cardStatus" class="status-message"></div>
+                </form>
+            </div>
+
+            <!-- Scenes List -->
+            <h2 style="margin-bottom: 25px;">Scenes (<span id="cardCount">0</span>)</h2>
+            <div id="cardsGrid" class="cards-grid"></div>
+            <div id="emptyCards" class="empty-state" style="display: none;">
+                <p>No scenes yet. Add your first scene above!</p>
+            </div>
+        </div>
+    </div>
+
+    <!-- Edit Scene Modal -->
+    <div id="editModal" class="modal" style="display: none;">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2>Edit Scene</h2>
+                <span class="close-modal" onclick="closeEditModal()">&times;</span>
+            </div>
+            <form id="editCardForm">
+                <input type="hidden" id="editCardId">
+                <div class="form-group">
+                    <label>Upload Image</label>
+                    <div class="upload-area" onclick="document.getElementById('editImageInput').click()">
+                        <div class="upload-icon">📸</div>
+                        <p>Click to upload or drag and drop</p>
+                        <input type="file" id="editImageInput" accept="image/*">
+                        <img id="editImagePreview" class="preview-image" style="display: none;">
+                    </div>
+                </div>
+                <div class="form-group">
+                    <label for="editPrompt">Prompt</label>
+                    <textarea id="editPrompt" name="prompt" placeholder="Enter video prompt..." required></textarea>
+                </div>
+                <div class="modal-actions">
+                    <button type="button" class="btn btn-secondary" onclick="closeEditModal()">Cancel</button>
+                    <button type="submit" class="btn btn-primary">Save Changes</button>
+                </div>
+                <div id="editStatus" class="status-message"></div>
+            </form>
+        </div>
+    </div>
+
+    <script>
+        const deckId = '{{ deck_id }}';
+        let deck = null;
+        let uploadedImageUrl = null;
+        let uploadedImageFilename = null;
+
+        // Load deck on page load
+        loadDeck();
+
+        // Image upload
+        document.getElementById('cardImageInput').addEventListener('change', async (e) => {
+            if (e.target.files.length > 0) {
+                await uploadImage(e.target.files[0]);
+            }
+        });
+
+        // Add card form
+        document.getElementById('addCardForm').addEventListener('submit', async (e) => {
+            e.preventDefault();
+
+            if (!uploadedImageUrl) {
+                showStatus('cardStatus', 'Please upload an image first', 'error');
+                return;
+            }
+
+            const prompt = document.getElementById('cardPrompt').value.trim();
+
+                if (!prompt) {
+                showStatus('cardStatus', 'Please enter a prompt', 'error');
+                return;
+            }
+
+            try {
+                const response = await fetch(`/api/decks/${deckId}/cards`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        image_url: uploadedImageUrl,
+                        image_filename: uploadedImageFilename,
+                        prompt: prompt
+                    })
+                });
+
+                const data = await response.json();
+
+                if (data.success) {
+                    showStatus('cardStatus', 'Scene added successfully!', 'success');
+                    document.getElementById('addCardForm').reset();
+                    document.getElementById('cardImagePreview').style.display = 'none';
+                    uploadedImageUrl = null;
+                    uploadedImageFilename = null;
+                    loadDeck();
+                } else {
+                    showStatus('cardStatus', data.error || 'Failed to add scene', 'error');
+                }
+            } catch (error) {
+                showStatus('cardStatus', 'Error: ' + error.message, 'error');
+            }
+        });
+
+        async function uploadImage(file) {
+            showStatus('cardStatus', 'Uploading image...', 'success');
+            const formData = new FormData();
+            formData.append('image', file);
+
+            try {
+                const response = await fetch('/api/upload-image', {
+                    method: 'POST',
+                    body: formData
+                });
+
+                const data = await response.json();
+
+                if (data.success) {
+                    uploadedImageUrl = data.image_url;
+                    uploadedImageFilename = data.filename;
+                    document.getElementById('cardImagePreview').src = data.image_url;
+                    document.getElementById('cardImagePreview').style.display = 'block';
+                    showStatus('cardStatus', 'Image uploaded!', 'success');
+                } else {
+                    throw new Error(data.error || 'Upload failed');
+                }
+            } catch (error) {
+                showStatus('cardStatus', 'Upload error: ' + error.message, 'error');
+            }
+        }
+
+        async function loadDeck() {
+            try {
+                const response = await fetch(`/api/decks/${deckId}`);
+                const data = await response.json();
+
+                if (data.success) {
+                    deck = data.deck;
+                    displayDeck();
+                }
+            } catch (error) {
+                console.error('Error loading deck:', error);
+            }
+        }
+
+        function displayDeck() {
+            // Update header
+            document.getElementById('deckTitle').textContent = deck.name;
+
+            // Update deck info
+            const deckInfo = document.getElementById('deckInfo');
+            deckInfo.innerHTML = `
+                <h2>${deck.name}</h2>
+                <p><strong>Aspect Ratio:</strong> ${deck.aspect_ratio}</p>
+                <p><strong>Status:</strong> ${deck.status || 'draft'}</p>
+                <p><strong>Scenes:</strong> ${deck.cards ? deck.cards.length : 0}</p>
+            `;
+
+            // Update card count
+            document.getElementById('cardCount').textContent = deck.cards ? deck.cards.length : 0;
+
+            // Display cards
+            const cardsGrid = document.getElementById('cardsGrid');
+            const emptyCards = document.getElementById('emptyCards');
+
+            if (!deck.cards || deck.cards.length === 0) {
+                cardsGrid.innerHTML = '';
+                emptyCards.style.display = 'block';
+                return;
+            }
+
+            emptyCards.style.display = 'none';
+            cardsGrid.innerHTML = '';
+
+            deck.cards.forEach(card => {
+                const cardDiv = document.createElement('div');
+                cardDiv.className = 'card-item';
+                cardDiv.innerHTML = `
+                    <img src="${card.image_url}" alt="Card image">
+                    <h3>Scene ${deck.cards.indexOf(card) + 1}</h3>
+                    <p>${card.prompt}</p>
+                    <div class="card-actions">
+                        <button onclick="deleteCard('${card.id}')" class="btn btn-danger" style="font-size: 0.9em; padding: 8px 16px;">Delete</button>
+                    </div>
+                `;
+                cardsGrid.appendChild(cardDiv);
+            });
+        }
+
+        async function deleteCard(cardId) {
+            if (!confirm('Delete this scene?')) {
+                return;
+            }
+
+            try {
+                const response = await fetch(`/api/decks/${deckId}/cards/${cardId}`, {
+                    method: 'DELETE'
+                });
+
+                const data = await response.json();
+
+                if (data.success) {
+                    loadDeck();
+                } else {
+                    alert('Error: ' + (data.error || 'Failed to delete scene'));
+                }
+            } catch (error) {
+                alert('Error: ' + error.message);
+            }
+        }
+
+        function showStatus(elementId, message, type) {
+            const element = document.getElementById(elementId);
+            element.textContent = message;
+            element.className = `status-message ${type}`;
+            element.style.display = 'block';
+
+            if (type === 'success') {
+                setTimeout(() => {
+                    element.style.display = 'none';
+                }, 3000);
+            }
+        }
+    </script>
+</body>
+</html>
+

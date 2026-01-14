@@ -1,0 +1,49 @@
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+env/
+venv/
+ENV/
+.venv
+
+# Flask
+instance/
+.webassets-cache
+
+# Environment variables
+.env
+.env.local
+
+# Uploads and temporary files
+uploads/
+*.mp4
+*.mov
+*.avi
+*.jpeg
+*.jpg
+*.png
+*.gif
+
+# Data files
+video_history.json
+decks.json
+*.json.backup
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Backup files
+*.backup
+app.py.backup
+
