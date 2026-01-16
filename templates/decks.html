@@ -356,10 +356,16 @@
                 if (data.success) {
                     decks = data.decks;
                     displayDecks(decks);
-                    // Auto-update failed tasks for existing decks on page load (only once)
-                    if (!window.failedTasksUpdated) {
+                    // Auto-update failed tasks for existing decks on initial page load only
+                    // Check both the flag and that we haven't called it recently (within last 5 minutes)
+                    const now = Date.now();
+                    const lastUpdateTime = window.failedTasksLastUpdate || 0;
+                    const fiveMinutes = 5 * 60 * 1000;
+                    
+                    if (!window.failedTasksUpdated && (now - lastUpdateTime > fiveMinutes)) {
                         updateFailedTasks();
                         window.failedTasksUpdated = true;
+                        window.failedTasksLastUpdate = now;
                     }
                 }
             } catch (error) {
@@ -368,7 +374,13 @@
         }
 
         async function updateFailedTasks() {
+            // Prevent multiple simultaneous calls
+            if (window.failedTasksUpdating) {
+                return;
+            }
+            
             try {
+                window.failedTasksUpdating = true;
                 const response = await fetch('/api/decks/update-failed-tasks', {
                     method: 'POST'
                 });
@@ -380,6 +392,8 @@
                 }
             } catch (error) {
                 console.error('Error updating failed tasks:', error);
+            } finally {
+                window.failedTasksUpdating = false;
             }
         }
 

@@ -47,3 +47,7 @@ Thumbs.db
 *.backup
 app.py.backup
 
+# Log files
+logs/
+*.log
+

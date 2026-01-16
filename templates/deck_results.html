@@ -227,6 +227,59 @@
             margin-bottom: 10px;
         }
 
+        .video-actions {
+            display: flex;
+            justify-content: center;
+            gap: 10px;
+            margin-top: 10px;
+        }
+
+        .btn-approve {
+            background: #28a745;
+            color: white;
+            padding: 10px 20px;
+            border: none;
+            border-radius: 8px;
+            font-size: 0.95em;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .btn-approve:hover {
+            background: #218838;
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(40, 167, 69, 0.4);
+        }
+
+        .btn-approve:disabled {
+            background: #6c757d;
+            cursor: not-allowed;
+            transform: none;
+        }
+
+        .btn-approve.approved {
+            background: #17a2b8;
+        }
+
+        .btn-approve.approved:hover {
+            background: #138496;
+        }
+
+        .btn-unapprove {
+            background: #ffc107;
+            color: #000;
+        }
+
+        .btn-unapprove:hover {
+            background: #e0a800;
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(255, 193, 7, 0.4);
+        }
+
         .video-item.failed {
             text-align: center;
         }
@@ -271,6 +324,16 @@
         .status-message.info {
             background: #d1ecf1;
             color: #0c5460;
+        }
+
+        .status-message.success {
+            background: #d4edda;
+            color: #155724;
+        }
+
+        .status-message.error {
+            background: #f8d7da;
+            color: #721c24;
         }
     </style>
 </head>
@@ -490,14 +553,44 @@
                     const videosGrid = sceneSection.querySelector(`#videos-grid-${scene.card_index}`);
 
                     // Add successful videos
-                    scene.videos.forEach(video => {
+                    scene.videos.forEach((video, videoIndex) => {
                         const videoItem = document.createElement('div');
                         videoItem.className = 'video-item';
+                        videoItem.dataset.videoUrl = video.video_url;
+                        videoItem.dataset.cardId = video.card_id;
+                        const isApproved = video.approved || false;
+                        
+                        // Escape video URL and card ID for use in HTML
+                        const escapedVideoUrl = video.video_url.replace(/'/g, "\\'").replace(/"/g, '&quot;');
+                        const escapedCardId = video.card_id.replace(/'/g, "\\'").replace(/"/g, '&quot;');
+                        
                         videoItem.innerHTML = `
                             <video controls preload="metadata">
                                 <source src="${video.video_url}" type="video/mp4">
                             </video>
+                            <div class="video-actions">
+                                <button class="${isApproved ? 'btn-approve approved' : 'btn-approve'}" 
+                                        data-video-url="${escapedVideoUrl}"
+                                        data-card-id="${escapedCardId}"
+                                        data-approved="${isApproved}">
+                                    ${isApproved ? '✓ Approved (Click to Unapprove)' : '✓ Approve'}
+                                </button>
+                            </div>
                         `;
+                        
+                        // Add click handler
+                        const approveBtn = videoItem.querySelector('.btn-approve');
+                        if (approveBtn) {
+                            approveBtn.addEventListener('click', function() {
+                                const isCurrentlyApproved = this.dataset.approved === 'true';
+                                if (isCurrentlyApproved) {
+                                    unapproveVideo(video.video_url, video.card_id, this);
+                                } else {
+                                    approveVideo(video.video_url, video.card_id, this);
+                                }
+                            });
+                        }
+                        
                         videosGrid.appendChild(videoItem);
                     });
 
@@ -558,15 +651,45 @@
                     const existingFailedIds = Array.from(videosGrid.querySelectorAll('.failed')).map(f => f.dataset.taskId || '');
 
                     // Add new successful videos
-                    scene.videos.forEach(video => {
+                    scene.videos.forEach((video, videoIndex) => {
                         if (!existingVideoUrls.includes(video.video_url)) {
                             const videoItem = document.createElement('div');
                             videoItem.className = 'video-item';
+                            videoItem.dataset.videoUrl = video.video_url;
+                            videoItem.dataset.cardId = video.card_id;
+                            const isApproved = video.approved || false;
+                            
+                            // Escape video URL and card ID for use in HTML
+                            const escapedVideoUrl = video.video_url.replace(/'/g, "\\'").replace(/"/g, '&quot;');
+                            const escapedCardId = video.card_id.replace(/'/g, "\\'").replace(/"/g, '&quot;');
+                            
                             videoItem.innerHTML = `
                                 <video controls preload="metadata">
                                     <source src="${video.video_url}" type="video/mp4">
                                 </video>
+                                <div class="video-actions">
+                                    <button class="${isApproved ? 'btn-approve approved' : 'btn-approve'}" 
+                                            data-video-url="${escapedVideoUrl}"
+                                            data-card-id="${escapedCardId}"
+                                            data-approved="${isApproved}">
+                                        ${isApproved ? '✓ Approved (Click to Unapprove)' : '✓ Approve'}
+                                    </button>
+                                </div>
                             `;
+                            
+                            // Add click handler for both approve and unapprove
+                            const approveBtn = videoItem.querySelector('.btn-approve');
+                            if (approveBtn) {
+                                approveBtn.addEventListener('click', function() {
+                                    const isCurrentlyApproved = this.dataset.approved === 'true';
+                                    if (isCurrentlyApproved) {
+                                        unapproveVideo(video.video_url, video.card_id, this);
+                                    } else {
+                                        approveVideo(video.video_url, video.card_id, this);
+                                    }
+                                });
+                            }
+                            
                             videosGrid.appendChild(videoItem);
                         }
                     });
@@ -631,6 +754,107 @@
                 promptTextEl.classList.remove('full');
                 promptTextEl.classList.add('truncated');
                 readMoreBtn.textContent = 'Read more';
+            }
+        }
+
+        async function approveVideo(videoUrl, cardId, buttonElement) {
+            try {
+                // Disable button immediately to prevent double-clicks
+                buttonElement.disabled = true;
+                buttonElement.textContent = 'Approving...';
+
+                const response = await fetch(`/api/decks/${deckId}/approve-video`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({
+                        video_url: videoUrl,
+                        card_id: cardId
+                    })
+                });
+
+                const data = await response.json();
+
+                if (data.success) {
+                    // Update button to approved state
+                    buttonElement.classList.add('approved');
+                    buttonElement.dataset.approved = 'true';
+                    buttonElement.textContent = '✓ Approved (Click to Unapprove)';
+                    buttonElement.disabled = false;
+                    showStatus('Video approved successfully!', 'success');
+                    
+                    // Auto-hide success message after 3 seconds
+                    setTimeout(() => {
+                        const statusEl = document.getElementById('status');
+                        statusEl.classList.remove('show');
+                    }, 3000);
+                    
+                    // Log approval
+                    console.log(`Video approved: ${videoUrl.substring(0, 50)}...`);
+                } else {
+                    // Re-enable button on error
+                    buttonElement.disabled = false;
+                    buttonElement.textContent = '✓ Approve';
+                    showStatus('Error: ' + (data.error || 'Failed to approve video'), 'error');
+                }
+            } catch (error) {
+                // Re-enable button on error
+                buttonElement.disabled = false;
+                buttonElement.textContent = '✓ Approve';
+                showStatus('Error: ' + error.message, 'error');
+                console.error('Error approving video:', error);
+            }
+        }
+
+        async function unapproveVideo(videoUrl, cardId, buttonElement) {
+            try {
+                // Disable button immediately to prevent double-clicks
+                const originalText = buttonElement.textContent;
+                buttonElement.disabled = true;
+                buttonElement.textContent = 'Unapproving...';
+
+                const response = await fetch(`/api/decks/${deckId}/unapprove-video`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({
+                        video_url: videoUrl,
+                        card_id: cardId
+                    })
+                });
+
+                const data = await response.json();
+
+                if (data.success) {
+                    // Update button to unapproved state
+                    buttonElement.classList.remove('approved');
+                    buttonElement.dataset.approved = 'false';
+                    buttonElement.textContent = '✓ Approve';
+                    buttonElement.disabled = false;
+                    showStatus('Video unapproved successfully!', 'success');
+                    
+                    // Auto-hide success message after 3 seconds
+                    setTimeout(() => {
+                        const statusEl = document.getElementById('status');
+                        statusEl.classList.remove('show');
+                    }, 3000);
+                    
+                    // Log unapproval
+                    console.log(`Video unapproved: ${videoUrl.substring(0, 50)}...`);
+                } else {
+                    // Re-enable button on error
+                    buttonElement.disabled = false;
+                    buttonElement.textContent = originalText;
+                    showStatus('Error: ' + (data.error || 'Failed to unapprove video'), 'error');
+                }
+            } catch (error) {
+                // Re-enable button on error
+                buttonElement.disabled = false;
+                buttonElement.textContent = '✓ Approved (Click to Unapprove)';
+                showStatus('Error: ' + error.message, 'error');
+                console.error('Error unapproving video:', error);
             }
         }
     </script>
