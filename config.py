@@ -78,3 +78,4 @@ class Config:
             f"EndpointSuffix=core.windows.net"
         )
 
+

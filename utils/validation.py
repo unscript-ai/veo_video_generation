@@ -93,3 +93,4 @@ def validate_aspect_ratio(aspect_ratio: str) -> tuple[bool, Optional[str]]:
     
     return True, None
 
+
