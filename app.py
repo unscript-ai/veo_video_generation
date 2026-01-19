@@ -6,8 +6,10 @@ This is a refactored version with improved structure, logging, and best practice
 import os
 import logging
 import time
+import socket
 from flask import Flask, render_template, request, jsonify, g
 from werkzeug.utils import secure_filename
+from werkzeug.exceptions import HTTPException
 
 from config import Config
 from utils.logging_config import setup_logging
@@ -119,6 +121,17 @@ def log_response_info(response):
 @app.errorhandler(Exception)
 def log_exceptions(error):
     """Log all exceptions."""
+    # Don't log HTTP exceptions (like 404, 405) as errors - they're expected
+    # Let Flask handle them naturally
+    if isinstance(error, HTTPException):
+        logger.debug(
+            f"[HTTP] {request.method} {request.path} | "
+            f"Status: {error.code} | {error.description}"
+        )
+        # Return the HTTP exception response instead of re-raising
+        return jsonify({'error': error.description}), error.code
+    
+    # Log unexpected exceptions as errors
     logger.error(
         f"[ERROR] {request.method} {request.path} | "
         f"Error: {str(error)}",
@@ -897,6 +910,13 @@ def not_found(error):
     return jsonify({'error': 'Resource not found'}), 404
 
 
+@app.errorhandler(405)
+def method_not_allowed(error):
+    """Handle 405 Method Not Allowed errors."""
+    logger.debug(f"Method not allowed: {request.method} {request.path}")
+    return jsonify({'error': f'Method {request.method} not allowed for this endpoint'}), 405
+
+
 @app.errorhandler(500)
 def internal_error(error):
     """Handle 500 errors."""
@@ -908,10 +928,47 @@ def internal_error(error):
 # Application Entry Point
 # ============================================================================
 
+def get_local_ip():
+    """Get the local IP address of the machine."""
+    try:
+        # Connect to a remote address to determine local IP
+        # This doesn't actually send data, just determines the route
+        s = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
+        s.settimeout(0)
+        try:
+            # Connect to a public DNS server (doesn't actually connect)
+            s.connect(('8.8.8.8', 80))
+            ip = s.getsockname()[0]
+        except Exception:
+            # Fallback to localhost
+            ip = '127.0.0.1'
+        finally:
+            s.close()
+        return ip
+    except Exception:
+        return '127.0.0.1'
+
+
 if __name__ == '__main__':
     port = int(os.environ.get('PORT', 5000))
     debug = os.environ.get('FLASK_DEBUG', 'False').lower() == 'true'
     
     logger.info(f"Starting Veo Video Generation application on port {port}")
+    
+    # Get local IP address
+    local_ip = get_local_ip()
+    
+    # Print access URLs
+    print("\n" + "="*60)
+    print("🚀 Veo Video Generation Application is running!")
+    print("="*60)
+    print(f"📍 Local access:    http://localhost:{port}")
+    print(f"📍 Local access:    http://127.0.0.1:{port}")
+    if local_ip != '127.0.0.1':
+        print(f"🌐 Network access:  http://{local_ip}:{port}")
+    print("="*60 + "\n")
+    
+    logger.info(f"Application accessible at http://localhost:{port} and http://{local_ip}:{port}")
+    
     app.run(debug=debug, host='0.0.0.0', port=port)
 
