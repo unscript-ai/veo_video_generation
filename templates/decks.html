@@ -471,8 +471,8 @@
                         `<button onclick="checkDeckStatus('${deck.id}', true)" class="btn btn-secondary btn-small" title="Check for completed videos">Check Videos</button>` : 
                         ''
                     }
-                    ${cardCount > 0 && (deck.status === 'draft' || (deck.status === 'generating' && totalVideos === 0)) ? 
-                        `<button onclick="generateDeck('${deck.id}')" class="btn btn-primary btn-small">${deck.status === 'generating' ? 'Regenerate' : 'Generate'}</button>` : 
+                    ${cardCount > 0 && deck.status === 'draft' ? 
+                        `<button onclick="generateDeck('${deck.id}')" class="btn btn-primary btn-small">Generate</button>` : 
                         ''
                     }
                     <button onclick="deleteDeck('${deck.id}', '${deck.name}')" class="btn btn-danger btn-small" title="Delete this video">Delete</button>

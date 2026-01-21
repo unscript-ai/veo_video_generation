@@ -52,13 +52,38 @@ class StatusService:
             existing_video_count = len(card.get('video_urls', []))
             expected_video_count = len(task_ids)
             
-            # Only check if we don't have all videos yet
-            if existing_video_count < expected_video_count:
-                for task_id in task_ids:
+            # Track which task_ids have already been processed to avoid duplicates
+            # Get mapping from task_id to video_url if it exists
+            task_to_video_map = card.get('task_video_map', {})  # task_id -> video_url mapping
+            processed_task_ids = set(task_to_video_map.keys())
+            
+            # Check all tasks, but only process ones that haven't been completed yet
+            for task_id in task_ids:
+                # Skip if this task_id already has a video assigned
+                if task_id in processed_task_ids:
+                    # Still check status to update if needed, but don't process again
                     try:
                         status_result = self.video_service.get_video_status(task_id)
-                        
-                        if status_result['status'] == 'completed':
+                        # If status changed to failed, update it
+                        if status_result['status'] == 'failed':
+                            self._track_failed_video(
+                                task_id,
+                                status_result,
+                                card
+                            )
+                    except Exception as e:
+                        error_msg = str(e)
+                        if "record is null" not in error_msg.lower() and "not found" not in error_msg.lower():
+                            logger.debug(f"Error checking already-processed task {task_id[:8]}...: {e}")
+                    continue
+                
+                try:
+                    status_result = self.video_service.get_video_status(task_id)
+                    
+                    if status_result['status'] == 'completed':
+                        # Process if this specific task hasn't been processed yet
+                        # (even if we have enough videos, we should map the task)
+                        if task_id not in processed_task_ids:
                             self._process_completed_video(
                                 task_id,
                                 status_result,
@@ -68,22 +93,26 @@ class StatusService:
                                 upload_folder
                             )
                             updated_count += 1
-                            
-                        elif status_result['status'] == 'failed':
-                            self._track_failed_video(
-                                task_id,
-                                status_result,
-                                card
+                        else:
+                            logger.debug(
+                                f"Task {task_id[:8]}... already processed, skipping"
                             )
-                        
-                        # Remove from pending
-                        pending_tasks.pop(task_id, None)
-                        
-                    except Exception as e:
-                        error_msg = str(e)
-                        # Skip "record is null" errors (task still processing)
-                        if "record is null" not in error_msg.lower() and "not found" not in error_msg.lower():
-                            logger.error(f"Error checking task {task_id}: {e}")
+                            
+                    elif status_result['status'] == 'failed':
+                        self._track_failed_video(
+                            task_id,
+                            status_result,
+                            card
+                        )
+                    
+                    # Remove from pending
+                    pending_tasks.pop(task_id, None)
+                    
+                except Exception as e:
+                    error_msg = str(e)
+                    # Skip "record is null" errors (task still processing)
+                    if "record is null" not in error_msg.lower() and "not found" not in error_msg.lower():
+                        logger.error(f"Error checking task {task_id}: {e}")
         
         # Update card and deck statuses
         self._update_card_statuses(deck)
@@ -130,12 +159,20 @@ class StatusService:
                 'aspect_ratio': deck.get('aspect_ratio', Config.DEFAULT_ASPECT_RATIO) if deck else Config.DEFAULT_ASPECT_RATIO,
             }
         
+        # Check if this task_id has already been processed
+        task_video_map = card.get('task_video_map', {})
+        if task_id in task_video_map:
+            logger.debug(f"Task {task_id[:8]}... already processed, skipping")
+            return  # This task has already been processed
+        
         # Check if we need to process this video
         current_video_count = len(card.get('video_urls', []))
         expected_video_count = len(card.get('task_ids', []))
         
-        if current_video_count >= expected_video_count:
-            return  # Already have all videos
+        # Check if all expected videos are from unique tasks
+        processed_tasks = set(task_video_map.keys())
+        if len(processed_tasks) >= expected_video_count:
+            return  # All tasks have been processed
         
         # Determine filename
         image_filename = task_metadata.get('image_filename', '')
@@ -162,15 +199,40 @@ class StatusService:
             if 'video_urls' not in card:
                 card['video_urls'] = []
             
-            # Check if URL already exists
+            # Initialize task_video_map if it doesn't exist
+            if 'task_video_map' not in card:
+                card['task_video_map'] = {}
+            
+            # Check if this task_id has already been processed
+            if task_id in card['task_video_map']:
+                logger.info(
+                    f"Task {task_id[:8]}... already processed with video "
+                    f"{card['task_video_map'][task_id]}, skipping duplicate"
+                )
+                return
+            
+            # Check if URL already exists (different task producing same video)
             if azure_video_url not in card['video_urls']:
                 card['video_urls'].append(azure_video_url)
+                # Map this task_id to this video URL
+                card['task_video_map'][task_id] = azure_video_url
                 logger.info(
-                    f"Added video to card {card['id'][:8]}... "
+                    f"Added video to card {card['id'][:8]}... for task {task_id[:8]}... "
                     f"Total: {len(card['video_urls'])}/{expected_video_count}"
                 )
             else:
-                logger.debug("Video already exists in card, skipping duplicate")
+                # Video URL exists but from a different task - still map this task
+                existing_task_id = next(
+                    (tid for tid, url in card.get('task_video_map', {}).items() if url == azure_video_url),
+                    None
+                )
+                if existing_task_id:
+                    logger.warning(
+                        f"Video URL already exists for task {existing_task_id[:8]}..., "
+                        f"but task {task_id[:8]}... also produced same video. "
+                        f"Mapping task {task_id[:8]}... to existing video."
+                    )
+                card['task_video_map'][task_id] = azure_video_url
         else:
             # Track as failed
             error_msg = "Failed to download or upload video to Azure"

@@ -40,6 +40,8 @@ class VideoService:
         prompt: str,
         image_url: str,
         image_filename: str = "",
+        first_frame_url: Optional[str] = None,
+        last_frame_url: Optional[str] = None,
         aspect_ratio: str = Config.DEFAULT_ASPECT_RATIO,
         model: str = Config.DEFAULT_MODEL,
         seeds: Optional[int] = None,
@@ -50,8 +52,10 @@ class VideoService:
         
         Args:
             prompt: Text prompt describing the video
-            image_url: URL of the reference image
-            image_filename: Original image filename
+            image_url: URL of the reference image (backward compatibility)
+            image_filename: Original image filename (backward compatibility)
+            first_frame_url: URL of the first frame image
+            last_frame_url: URL of the last frame image (optional)
             aspect_ratio: Video aspect ratio
             model: Model to use
             seeds: Random seed for reproducibility
@@ -63,10 +67,32 @@ class VideoService:
         Raises:
             Exception: If generation fails
         """
+        # Determine which image URLs to use
+        # Priority: first_frame_url/last_frame_url > image_url (backward compatibility)
+        if first_frame_url and first_frame_url.strip():
+            first_frame = first_frame_url.strip()
+        elif image_url and image_url.strip():
+            first_frame = image_url.strip()
+        else:
+            raise ValueError("First frame image URL is required")
+        
+        # Determine image URLs based on generation type
+        if generation_type == "FIRST_AND_LAST_FRAMES_2_VIDEO":
+            if last_frame_url:
+                # Both frames provided - send both
+                image_urls = [first_frame, last_frame_url]
+            else:
+                # If last frame not provided, send only first frame (start frame)
+                image_urls = [first_frame]
+                logger.info("Last frame not provided, sending only first frame (start frame)")
+        else:
+            # For other generation types, use first frame
+            image_urls = [first_frame]
+        
         try:
             result = self.generator.generate_video(
                 prompt=prompt,
-                image_urls=[image_url],
+                image_urls=image_urls,
                 model=model,
                 aspect_ratio=aspect_ratio,
                 seeds=seeds,
@@ -159,6 +185,7 @@ class VideoService:
             
             # If part of a deck, determine video number
             if deck_id and card_id:
+                # Get deck directly from storage (cards will be enriched by caller if needed)
                 deck = StorageService.get_deck_by_id(deck_id)
                 if deck:
                     card = next((c for c in deck.get('cards', []) if c.get('id') == card_id), None)
@@ -221,6 +248,18 @@ class VideoService:
         )
         
         for card in cards:
+            # Enrich card with virtual fields if not already present
+            if 'first_frame_url' not in card:
+                card['first_frame_url'] = card.get('image_url', '')
+                card['first_frame_filename'] = card.get('image_filename', '')
+                metadata = card.get('metadata', {})
+                if metadata and isinstance(metadata, dict) and 'last_frame_url' in metadata:
+                    card['last_frame_url'] = metadata.get('last_frame_url')
+                    card['last_frame_filename'] = metadata.get('last_frame_filename')
+                else:
+                    card['last_frame_url'] = None
+                    card['last_frame_filename'] = None
+            
             for i in range(Config.VIDEOS_PER_CARD):
                 # Rate limiting: wait if we've sent a full batch
                 if requests_sent > 0 and requests_sent % batch_size == 0:
@@ -231,9 +270,30 @@ class VideoService:
                     time.sleep(delay_between_batches)
                 
                 try:
+                    # Get first and last frame URLs (cards should be enriched by caller)
+                    first_frame_url = card.get('first_frame_url') or card.get('image_url')
+                    last_frame_url = card.get('last_frame_url')
+                    
+                    # Validate first frame exists
+                    if not first_frame_url or not first_frame_url.strip():
+                        logger.error(f"Card {card['id']} has no valid first frame URL, skipping")
+                        continue
+                    
+                    # Build image URLs based on generation type
+                    if Config.DEFAULT_GENERATION_TYPE == "FIRST_AND_LAST_FRAMES_2_VIDEO":
+                        if last_frame_url and last_frame_url.strip():
+                            # Both frames provided - send both
+                            image_urls = [first_frame_url.strip(), last_frame_url.strip()]
+                        else:
+                            # If last frame not provided, send only first frame (start frame)
+                            image_urls = [first_frame_url.strip()]
+                            logger.debug(f"Last frame not provided for card {card['id']}, sending only first frame (start frame)")
+                    else:
+                        image_urls = [first_frame_url.strip()]
+                    
                     result = self.generator.generate_video(
                         prompt=card['prompt'],
-                        image_urls=[card['image_url']],
+                        image_urls=image_urls,
                         model=Config.DEFAULT_MODEL,
                         aspect_ratio=aspect_ratio,
                         enable_translation=True,
@@ -265,9 +325,29 @@ class VideoService:
                         time.sleep(10)
                         # Retry once
                         try:
+                            # Get first and last frame URLs (cards should be enriched by caller)
+                            first_frame_url = card.get('first_frame_url') or card.get('image_url')
+                            last_frame_url = card.get('last_frame_url')
+                            
+                            # Validate first frame exists
+                            if not first_frame_url or not first_frame_url.strip():
+                                logger.error(f"Card {card['id']} has no valid first frame URL, skipping retry")
+                                continue
+                            
+                            # Build image URLs based on generation type
+                            if Config.DEFAULT_GENERATION_TYPE == "FIRST_AND_LAST_FRAMES_2_VIDEO":
+                                if last_frame_url and last_frame_url.strip():
+                                    # Both frames provided - send both
+                                    image_urls = [first_frame_url.strip(), last_frame_url.strip()]
+                                else:
+                                    # If last frame not provided, send only first frame (start frame)
+                                    image_urls = [first_frame_url.strip()]
+                            else:
+                                image_urls = [first_frame_url.strip()]
+                            
                             result = self.generator.generate_video(
                                 prompt=card['prompt'],
-                                image_urls=[card['image_url']],
+                                image_urls=image_urls,
                                 model=Config.DEFAULT_MODEL,
                                 aspect_ratio=aspect_ratio,
                                 enable_translation=True,

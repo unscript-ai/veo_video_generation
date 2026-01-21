@@ -151,6 +151,139 @@
             margin-top: 15px;
         }
 
+        /* Frames Upload Container - Side by Side Layout */
+        .frames-upload-container {
+            display: flex;
+            align-items: center;
+            gap: 20px;
+            margin-bottom: 10px;
+        }
+
+        .frame-upload-panel {
+            flex: 1;
+            min-width: 0;
+        }
+
+        .frame-upload-area {
+            border: 2px dashed #ccc;
+            border-radius: 12px;
+            padding: 25px 15px;
+            text-align: center;
+            background: white;
+            cursor: pointer;
+            transition: all 0.3s;
+            position: relative;
+            min-height: 200px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .frame-upload-area:hover {
+            border-color: #667eea;
+            background: #f8f9ff;
+        }
+
+        .frame-upload-area.has-image {
+            border-color: #667eea;
+            border-style: solid;
+            padding: 25px 15px;
+        }
+
+        .frame-upload-icon {
+            color: #999;
+            margin-bottom: 12px;
+            transition: color 0.3s;
+        }
+
+        .frame-upload-area:hover .frame-upload-icon {
+            color: #667eea;
+        }
+
+        .frame-upload-area.has-image .frame-upload-icon {
+            display: block;
+        }
+
+        .frame-label {
+            font-weight: 600;
+            color: #333;
+            margin: 0 0 5px 0;
+            font-size: 0.95em;
+        }
+
+        .frame-required {
+            font-size: 0.75em;
+            color: #f44336;
+            margin: 0 0 12px 0;
+            font-weight: 500;
+        }
+
+        .frame-optional {
+            font-size: 0.75em;
+            color: #666;
+            margin: 0 0 12px 0;
+            font-weight: 500;
+        }
+
+        .frame-upload-area input[type="file"] {
+            display: none;
+        }
+
+        .frames-separator {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: #ccc;
+            flex-shrink: 0;
+        }
+
+        .frames-separator svg {
+            width: 32px;
+            height: 32px;
+        }
+
+        .frame-preview {
+            width: 120px;
+            height: 120px;
+            position: relative;
+            border-radius: 8px;
+            overflow: hidden;
+            margin-top: 8px;
+            border: 2px solid #e0e0e0;
+        }
+
+        .frame-preview-image {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+            display: block;
+        }
+
+        .frame-remove-btn {
+            position: absolute;
+            top: 4px;
+            right: 4px;
+            background: rgba(0, 0, 0, 0.7);
+            color: white;
+            border: none;
+            border-radius: 50%;
+            width: 24px;
+            height: 24px;
+            font-size: 16px;
+            line-height: 1;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: background 0.3s;
+            z-index: 10;
+        }
+
+        .frame-remove-btn:hover {
+            background: rgba(244, 67, 54, 0.9);
+        }
+
         .btn {
             padding: 12px 30px;
             border: none;
@@ -267,12 +400,48 @@
                 <h2>Add New Scene</h2>
                 <form id="addCardForm">
                     <div class="form-group">
-                        <label>Upload Image</label>
-                        <div class="upload-area" onclick="document.getElementById('cardImageInput').click()">
-                            <div class="upload-icon">📸</div>
-                            <p>Click to upload or drag and drop</p>
-                            <input type="file" id="cardImageInput" accept="image/*" required>
-                            <img id="cardImagePreview" class="preview-image" style="display: none;">
+                        <label style="margin-bottom: 15px; display: block;">Upload Frames</label>
+                        <div class="frames-upload-container">
+                            <div class="frame-upload-panel">
+                                <div class="frame-upload-area" onclick="document.getElementById('cardFirstFrameInput').click()">
+                                    <div class="frame-upload-icon">
+                                        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                                            <rect x="3" y="3" width="18" height="18" rx="2" stroke="currentColor" stroke-width="2" fill="none"/>
+                                            <path d="M12 8v8M8 12h8" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
+                                        </svg>
+                                    </div>
+                                    <p class="frame-label">First Frame</p>
+                                    <p id="cardFirstFrameRequired" class="frame-required">Required</p>
+                                    <div id="cardFirstFramePreview" class="frame-preview" style="display: none;">
+                                        <img class="frame-preview-image" src="" alt="First frame preview">
+                                        <button type="button" class="frame-remove-btn" onclick="removeFrame('first', event)">×</button>
+                                    </div>
+                                    <input type="file" id="cardFirstFrameInput" accept="image/*" required>
+                                </div>
+                            </div>
+                            <div class="frames-separator">
+                                <svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                                    <path d="M8 9l4 4 4-4" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                                    <path d="M16 15l-4-4-4 4" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                                </svg>
+                            </div>
+                            <div class="frame-upload-panel">
+                                <div class="frame-upload-area" onclick="document.getElementById('cardLastFrameInput').click()">
+                                    <div class="frame-upload-icon">
+                                        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                                            <rect x="3" y="3" width="18" height="18" rx="2" stroke="currentColor" stroke-width="2" fill="none"/>
+                                            <path d="M12 8v8M8 12h8" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
+                                        </svg>
+                                    </div>
+                                    <p class="frame-label">Last Frame</p>
+                                    <p class="frame-optional">Optional</p>
+                                    <div id="cardLastFramePreview" class="frame-preview" style="display: none;">
+                                        <img class="frame-preview-image" src="" alt="Last frame preview">
+                                        <button type="button" class="frame-remove-btn" onclick="removeFrame('last', event)">×</button>
+                                    </div>
+                                    <input type="file" id="cardLastFrameInput" accept="image/*">
+                                </div>
+                            </div>
                         </div>
                     </div>
                     <div class="form-group">
@@ -303,12 +472,48 @@
             <form id="editCardForm">
                 <input type="hidden" id="editCardId">
                 <div class="form-group">
-                    <label>Upload Image</label>
-                    <div class="upload-area" onclick="document.getElementById('editImageInput').click()">
-                        <div class="upload-icon">📸</div>
-                        <p>Click to upload or drag and drop</p>
-                        <input type="file" id="editImageInput" accept="image/*">
-                        <img id="editImagePreview" class="preview-image" style="display: none;">
+                    <label style="margin-bottom: 15px; display: block;">Upload Frames</label>
+                    <div class="frames-upload-container">
+                        <div class="frame-upload-panel">
+                            <div class="frame-upload-area" onclick="document.getElementById('editFirstFrameInput').click()">
+                                <div class="frame-upload-icon">
+                                    <svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                                        <rect x="3" y="3" width="18" height="18" rx="2" stroke="currentColor" stroke-width="2" fill="none"/>
+                                        <path d="M12 8v8M8 12h8" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
+                                    </svg>
+                                </div>
+                                <p class="frame-label">First Frame</p>
+                                <p id="editFirstFrameRequired" class="frame-required">Required</p>
+                                <div id="editFirstFramePreview" class="frame-preview" style="display: none;">
+                                    <img class="frame-preview-image" src="" alt="First frame preview">
+                                    <button type="button" class="frame-remove-btn" onclick="removeEditFrame('first', event)">×</button>
+                                </div>
+                                <input type="file" id="editFirstFrameInput" accept="image/*">
+                            </div>
+                        </div>
+                        <div class="frames-separator">
+                            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                                <path d="M8 9l4 4 4-4" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                                <path d="M16 15l-4-4-4 4" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                            </svg>
+                        </div>
+                        <div class="frame-upload-panel">
+                            <div class="frame-upload-area" onclick="document.getElementById('editLastFrameInput').click()">
+                                <div class="frame-upload-icon">
+                                    <svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                                        <rect x="3" y="3" width="18" height="18" rx="2" stroke="currentColor" stroke-width="2" fill="none"/>
+                                        <path d="M12 8v8M8 12h8" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
+                                    </svg>
+                                </div>
+                                <p class="frame-label">Last Frame</p>
+                                <p class="frame-optional">Optional</p>
+                                <div id="editLastFramePreview" class="frame-preview" style="display: none;">
+                                    <img class="frame-preview-image" src="" alt="Last frame preview">
+                                    <button type="button" class="frame-remove-btn" onclick="removeEditFrame('last', event)">×</button>
+                                </div>
+                                <input type="file" id="editLastFrameInput" accept="image/*">
+                            </div>
+                        </div>
                     </div>
                 </div>
                 <div class="form-group">
@@ -327,25 +532,148 @@
     <script>
         const deckId = '{{ deck_id }}';
         let deck = null;
-        let uploadedImageUrl = null;
-        let uploadedImageFilename = null;
-        let editUploadedImageUrl = null;
-        let editUploadedImageFilename = null;
+        let uploadedFirstFrameUrl = null;
+        let uploadedFirstFrameFilename = null;
+        let uploadedLastFrameUrl = null;
+        let uploadedLastFrameFilename = null;
+        let editUploadedFirstFrameUrl = null;
+        let editUploadedFirstFrameFilename = null;
+        let editUploadedLastFrameUrl = null;
+        let editUploadedLastFrameFilename = null;
 
         // Load deck on page load
         loadDeck();
 
-        // Image upload for adding new scene
-        document.getElementById('cardImageInput').addEventListener('change', async (e) => {
+        // First frame image upload for adding new scene
+        document.getElementById('cardFirstFrameInput').addEventListener('change', async (e) => {
             if (e.target.files.length > 0) {
-                await uploadImage(e.target.files[0]);
+                await uploadImage(e.target.files[0], 'first');
             }
         });
 
-        // Image upload for editing scene
-        document.getElementById('editImageInput').addEventListener('change', async (e) => {
+        // Last frame image upload for adding new scene
+        document.getElementById('cardLastFrameInput').addEventListener('change', async (e) => {
             if (e.target.files.length > 0) {
-                await uploadImageForEdit(e.target.files[0]);
+                await uploadImage(e.target.files[0], 'last');
+            }
+        });
+
+        // Drag and drop support for first frame
+        const firstFrameUploadArea = document.getElementById('cardFirstFrameInput').parentElement;
+        ['dragenter', 'dragover', 'dragleave', 'drop'].forEach(eventName => {
+            firstFrameUploadArea.addEventListener(eventName, preventDefaults, false);
+        });
+        ['dragenter', 'dragover'].forEach(eventName => {
+            firstFrameUploadArea.addEventListener(eventName, () => {
+                firstFrameUploadArea.style.borderColor = '#667eea';
+                firstFrameUploadArea.style.background = '#f0f2ff';
+            }, false);
+        });
+        ['dragleave', 'drop'].forEach(eventName => {
+            firstFrameUploadArea.addEventListener(eventName, () => {
+                if (!firstFrameUploadArea.classList.contains('has-image')) {
+                    firstFrameUploadArea.style.borderColor = '#ccc';
+                    firstFrameUploadArea.style.background = 'white';
+                }
+            }, false);
+        });
+        firstFrameUploadArea.addEventListener('drop', handleDropFirstFrame, false);
+
+        // Drag and drop support for last frame
+        const lastFrameUploadArea = document.getElementById('cardLastFrameInput').parentElement;
+        ['dragenter', 'dragover', 'dragleave', 'drop'].forEach(eventName => {
+            lastFrameUploadArea.addEventListener(eventName, preventDefaults, false);
+        });
+        ['dragenter', 'dragover'].forEach(eventName => {
+            lastFrameUploadArea.addEventListener(eventName, () => {
+                lastFrameUploadArea.style.borderColor = '#667eea';
+                lastFrameUploadArea.style.background = '#f0f2ff';
+            }, false);
+        });
+        ['dragleave', 'drop'].forEach(eventName => {
+            lastFrameUploadArea.addEventListener(eventName, () => {
+                if (!lastFrameUploadArea.classList.contains('has-image')) {
+                    lastFrameUploadArea.style.borderColor = '#ccc';
+                    lastFrameUploadArea.style.background = 'white';
+                }
+            }, false);
+        });
+        lastFrameUploadArea.addEventListener('drop', handleDropLastFrame, false);
+
+        function preventDefaults(e) {
+            e.preventDefault();
+            e.stopPropagation();
+        }
+
+        function handleDropFirstFrame(e) {
+            const dt = e.dataTransfer;
+            const files = dt.files;
+            if (files.length > 0) {
+                uploadImage(files[0], 'first');
+            }
+        }
+
+        function handleDropLastFrame(e) {
+            const dt = e.dataTransfer;
+            const files = dt.files;
+            if (files.length > 0) {
+                uploadImage(files[0], 'last');
+            }
+        }
+
+        function removeFrame(frameType, event) {
+            event.stopPropagation();
+            if (frameType === 'first') {
+                uploadedFirstFrameUrl = null;
+                uploadedFirstFrameFilename = null;
+                const previewDiv = document.getElementById('cardFirstFramePreview');
+                previewDiv.style.display = 'none';
+                previewDiv.parentElement.classList.remove('has-image');
+                document.getElementById('cardFirstFrameInput').value = '';
+                // Show "Required" text when first frame is removed
+                document.getElementById('cardFirstFrameRequired').style.display = 'block';
+            } else if (frameType === 'last') {
+                uploadedLastFrameUrl = null;
+                uploadedLastFrameFilename = null;
+                const previewDiv = document.getElementById('cardLastFramePreview');
+                previewDiv.style.display = 'none';
+                previewDiv.parentElement.classList.remove('has-image');
+                document.getElementById('cardLastFrameInput').value = '';
+            }
+        }
+
+        function removeEditFrame(frameType, event) {
+            event.stopPropagation();
+            if (frameType === 'first') {
+                editUploadedFirstFrameUrl = null;
+                editUploadedFirstFrameFilename = null;
+                const previewDiv = document.getElementById('editFirstFramePreview');
+                previewDiv.style.display = 'none';
+                previewDiv.parentElement.classList.remove('has-image');
+                document.getElementById('editFirstFrameInput').value = '';
+                // Show "Required" text when first frame is removed
+                document.getElementById('editFirstFrameRequired').style.display = 'block';
+            } else if (frameType === 'last') {
+                editUploadedLastFrameUrl = null;
+                editUploadedLastFrameFilename = null;
+                const previewDiv = document.getElementById('editLastFramePreview');
+                previewDiv.style.display = 'none';
+                previewDiv.parentElement.classList.remove('has-image');
+                document.getElementById('editLastFrameInput').value = '';
+            }
+        }
+
+        // First frame image upload for editing scene
+        document.getElementById('editFirstFrameInput').addEventListener('change', async (e) => {
+            if (e.target.files.length > 0) {
+                await uploadImageForEdit(e.target.files[0], 'first');
+            }
+        });
+
+        // Last frame image upload for editing scene
+        document.getElementById('editLastFrameInput').addEventListener('change', async (e) => {
+            if (e.target.files.length > 0) {
+                await uploadImageForEdit(e.target.files[0], 'last');
             }
         });
 
@@ -353,14 +681,21 @@
         document.getElementById('addCardForm').addEventListener('submit', async (e) => {
             e.preventDefault();
 
-            if (!uploadedImageUrl) {
-                showStatus('cardStatus', 'Please upload an image first', 'error');
+            // Verify deck exists before proceeding
+            if (!deck) {
+                showStatus('cardStatus', 'Error: Deck not loaded. Please refresh the page.', 'error');
+                await loadDeck();
+                return;
+            }
+
+            if (!uploadedFirstFrameUrl) {
+                showStatus('cardStatus', 'Please upload a first frame image', 'error');
                 return;
             }
 
             const prompt = document.getElementById('cardPrompt').value.trim();
 
-                if (!prompt) {
+            if (!prompt) {
                 showStatus('cardStatus', 'Please enter a prompt', 'error');
                 return;
             }
@@ -370,8 +705,10 @@
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({
-                        image_url: uploadedImageUrl,
-                        image_filename: uploadedImageFilename,
+                        first_frame_url: uploadedFirstFrameUrl,
+                        first_frame_filename: uploadedFirstFrameFilename,
+                        last_frame_url: uploadedLastFrameUrl || null,
+                        last_frame_filename: uploadedLastFrameFilename || null,
                         prompt: prompt
                     })
                 });
@@ -381,20 +718,29 @@
                 if (data.success) {
                     showStatus('cardStatus', 'Scene added successfully!', 'success');
                     document.getElementById('addCardForm').reset();
-                    document.getElementById('cardImagePreview').style.display = 'none';
-                    uploadedImageUrl = null;
-                    uploadedImageFilename = null;
+                    const firstPreview = document.getElementById('cardFirstFramePreview');
+                    const lastPreview = document.getElementById('cardLastFramePreview');
+                    firstPreview.style.display = 'none';
+                    lastPreview.style.display = 'none';
+                    firstPreview.parentElement.classList.remove('has-image');
+                    lastPreview.parentElement.classList.remove('has-image');
+                    // Show "Required" text again after form reset
+                    document.getElementById('cardFirstFrameRequired').style.display = 'block';
+                    uploadedFirstFrameUrl = null;
+                    uploadedFirstFrameFilename = null;
+                    uploadedLastFrameUrl = null;
+                    uploadedLastFrameFilename = null;
                     loadDeck();
                 } else {
-                    showStatus('cardStatus', data.error || 'Failed to add scene', 'error');
+                    showStatus('cardStatus', 'Error: ' + (data.error || 'Failed to add scene'), 'error');
                 }
             } catch (error) {
                 showStatus('cardStatus', 'Error: ' + error.message, 'error');
             }
         });
 
-        async function uploadImage(file) {
-            showStatus('cardStatus', 'Uploading image...', 'success');
+        async function uploadImage(file, frameType) {
+            showStatus('cardStatus', `Uploading ${frameType} frame...`, 'success');
             const formData = new FormData();
             formData.append('image', file);
 
@@ -407,16 +753,32 @@
                 const data = await response.json();
 
                 if (data.success) {
-                    uploadedImageUrl = data.image_url;
-                    uploadedImageFilename = data.filename;
-                    document.getElementById('cardImagePreview').src = data.image_url;
-                    document.getElementById('cardImagePreview').style.display = 'block';
-                    showStatus('cardStatus', 'Image uploaded!', 'success');
+                    if (frameType === 'first') {
+                        uploadedFirstFrameUrl = data.image_url;
+                        uploadedFirstFrameFilename = data.filename;
+                        const previewDiv = document.getElementById('cardFirstFramePreview');
+                        const previewImg = previewDiv.querySelector('.frame-preview-image');
+                        previewImg.src = data.image_url;
+                        previewDiv.style.display = 'block';
+                        previewDiv.parentElement.classList.add('has-image');
+                        // Hide "Required" text when first frame is uploaded
+                        document.getElementById('cardFirstFrameRequired').style.display = 'none';
+                        showStatus('cardStatus', 'First frame uploaded!', 'success');
+                    } else if (frameType === 'last') {
+                        uploadedLastFrameUrl = data.image_url;
+                        uploadedLastFrameFilename = data.filename;
+                        const previewDiv = document.getElementById('cardLastFramePreview');
+                        const previewImg = previewDiv.querySelector('.frame-preview-image');
+                        previewImg.src = data.image_url;
+                        previewDiv.style.display = 'block';
+                        previewDiv.parentElement.classList.add('has-image');
+                        showStatus('cardStatus', 'Last frame uploaded!', 'success');
+                    }
                 } else {
                     throw new Error(data.error || 'Upload failed');
                 }
             } catch (error) {
-                showStatus('cardStatus', 'Upload error: ' + error.message, 'error');
+                showStatus('cardStatus', `Upload error (${frameType} frame): ` + error.message, 'error');
             }
         }
 
@@ -428,23 +790,58 @@
                 if (data.success) {
                     deck = data.deck;
                     displayDeck();
+                } else {
+                    showStatus('cardStatus', 'Error: ' + (data.error || 'Failed to load deck'), 'error');
+                    console.error('Failed to load deck:', data.error);
                 }
             } catch (error) {
+                showStatus('cardStatus', 'Error loading deck: ' + error.message, 'error');
                 console.error('Error loading deck:', error);
             }
         }
 
         function displayDeck() {
+            if (!deck) {
+                // Deck not loaded, show error
+                document.getElementById('deckInfo').innerHTML = `
+                    <div style="padding: 20px; background: #f8d7da; border: 1px solid #f5c6cb; border-radius: 10px; color: #721c24;">
+                        <h3>⚠️ Deck Not Found</h3>
+                        <p>The deck with ID "${deckId}" could not be found.</p>
+                        <p>Please check if the deck exists or return to the <a href="/decks" style="color: #721c24; text-decoration: underline;">decks page</a>.</p>
+                    </div>
+                `;
+                return;
+            }
+
             // Update header
             document.getElementById('deckTitle').textContent = deck.name;
 
             // Update deck info
             const deckInfo = document.getElementById('deckInfo');
+            const deckStatus = deck.status || 'draft';
+            const isGenerating = deckStatus === 'generating';
+            const hasCards = deck.cards && deck.cards.length > 0;
+            
             deckInfo.innerHTML = `
+                <div style="display: flex; justify-content: space-between; align-items: flex-start; flex-wrap: wrap; gap: 20px;">
+                    <div>
                 <h2>${deck.name}</h2>
                 <p><strong>Aspect Ratio:</strong> ${deck.aspect_ratio}</p>
-                <p><strong>Status:</strong> ${deck.status || 'draft'}</p>
+                        <p><strong>Status:</strong> <span id="deckStatus">${deckStatus}</span></p>
                 <p><strong>Scenes:</strong> ${deck.cards ? deck.cards.length : 0}</p>
+                    </div>
+                    <div style="display: flex; gap: 10px; align-items: center;">
+                        ${hasCards ? `
+                            <button onclick="generateDeck('${deck.id}')" 
+                                    class="btn btn-primary" 
+                                    id="generateDeckBtn"
+                                    style="padding: 12px 24px; font-size: 1em;"
+                                    ${isGenerating ? 'disabled' : ''}>
+                                ${isGenerating ? '⏳ Generating...' : '🎬 Generate Videos'}
+                            </button>
+                        ` : ''}
+                    </div>
+                </div>
             `;
 
             // Update card count
@@ -466,9 +863,15 @@
             deck.cards.forEach(card => {
                 const cardDiv = document.createElement('div');
                 cardDiv.className = 'card-item';
+                const firstFrameUrl = card.first_frame_url || card.image_url;
+                const lastFrameUrl = card.last_frame_url;
+                const hasLastFrame = !!lastFrameUrl;
+                
                 cardDiv.innerHTML = `
-                    <img src="${card.image_url}" alt="Card image">
+                    <img src="${firstFrameUrl}" alt="First frame">
+                    ${hasLastFrame ? `<img src="${lastFrameUrl}" alt="Last frame" style="margin-top: 10px;">` : ''}
                     <h3>Scene ${deck.cards.indexOf(card) + 1}</h3>
+                    ${hasLastFrame ? '<p style="font-size: 0.85em; color: #28a745;">✓ First & Last Frame</p>' : ''}
                     <p>${card.prompt}</p>
                     <div class="card-actions">
                         <button onclick="editCard('${card.id}')" class="btn btn-primary" style="font-size: 0.9em; padding: 8px 16px; margin-right: 10px;">Edit</button>
@@ -490,14 +893,34 @@
             document.getElementById('editCardId').value = cardId;
             document.getElementById('editPrompt').value = card.prompt;
             
-            // Set current image
-            const editPreview = document.getElementById('editImagePreview');
-            editPreview.src = card.image_url;
-            editPreview.style.display = 'block';
+            // Set current images (with backward compatibility)
+            const firstFrameUrl = card.first_frame_url || card.image_url;
+            const lastFrameUrl = card.last_frame_url;
             
-            // Reset uploaded image for edit
-            editUploadedImageUrl = null;
-            editUploadedImageFilename = null;
+            const editFirstPreviewDiv = document.getElementById('editFirstFramePreview');
+            const editFirstPreviewImg = editFirstPreviewDiv.querySelector('.frame-preview-image');
+            editFirstPreviewImg.src = firstFrameUrl;
+            editFirstPreviewDiv.style.display = 'block';
+            editFirstPreviewDiv.parentElement.classList.add('has-image');
+            // Hide "Required" text when first frame exists
+            document.getElementById('editFirstFrameRequired').style.display = 'none';
+            
+            const editLastPreviewDiv = document.getElementById('editLastFramePreview');
+            if (lastFrameUrl) {
+                const editLastPreviewImg = editLastPreviewDiv.querySelector('.frame-preview-image');
+                editLastPreviewImg.src = lastFrameUrl;
+                editLastPreviewDiv.style.display = 'block';
+                editLastPreviewDiv.parentElement.classList.add('has-image');
+            } else {
+                editLastPreviewDiv.style.display = 'none';
+                editLastPreviewDiv.parentElement.classList.remove('has-image');
+            }
+            
+            // Reset uploaded images for edit
+            editUploadedFirstFrameUrl = null;
+            editUploadedFirstFrameFilename = null;
+            editUploadedLastFrameUrl = null;
+            editUploadedLastFrameFilename = null;
 
             // Show modal
             document.getElementById('editModal').style.display = 'block';
@@ -506,17 +929,26 @@
         function closeEditModal() {
             document.getElementById('editModal').style.display = 'none';
             document.getElementById('editCardForm').reset();
-            document.getElementById('editImagePreview').style.display = 'none';
+            const editFirstPreview = document.getElementById('editFirstFramePreview');
+            const editLastPreview = document.getElementById('editLastFramePreview');
+            editFirstPreview.style.display = 'none';
+            editLastPreview.style.display = 'none';
+            editFirstPreview.parentElement.classList.remove('has-image');
+            editLastPreview.parentElement.classList.remove('has-image');
+            // Show "Required" text again when modal is closed
+            document.getElementById('editFirstFrameRequired').style.display = 'block';
             document.getElementById('editStatus').style.display = 'none';
-            editUploadedImageUrl = null;
-            editUploadedImageFilename = null;
+            editUploadedFirstFrameUrl = null;
+            editUploadedFirstFrameFilename = null;
+            editUploadedLastFrameUrl = null;
+            editUploadedLastFrameFilename = null;
         }
 
-        async function uploadImageForEdit(file) {
+        async function uploadImageForEdit(file, frameType) {
             const formData = new FormData();
             formData.append('image', file);
 
-            showStatus('editStatus', 'Uploading image...', 'info');
+            showStatus('editStatus', `Uploading ${frameType} frame...`, 'info');
 
             try {
                 const response = await fetch('/api/upload-image', {
@@ -527,16 +959,32 @@
                 const data = await response.json();
 
                 if (data.success) {
-                    editUploadedImageUrl = data.image_url;
-                    editUploadedImageFilename = data.filename;
-                    document.getElementById('editImagePreview').src = data.image_url;
-                    document.getElementById('editImagePreview').style.display = 'block';
-                    showStatus('editStatus', 'Image uploaded!', 'success');
+                    if (frameType === 'first') {
+                        editUploadedFirstFrameUrl = data.image_url;
+                        editUploadedFirstFrameFilename = data.filename;
+                        const previewDiv = document.getElementById('editFirstFramePreview');
+                        const previewImg = previewDiv.querySelector('.frame-preview-image');
+                        previewImg.src = data.image_url;
+                        previewDiv.style.display = 'block';
+                        previewDiv.parentElement.classList.add('has-image');
+                        // Hide "Required" text when first frame is uploaded
+                        document.getElementById('editFirstFrameRequired').style.display = 'none';
+                        showStatus('editStatus', 'First frame uploaded!', 'success');
+                    } else if (frameType === 'last') {
+                        editUploadedLastFrameUrl = data.image_url;
+                        editUploadedLastFrameFilename = data.filename;
+                        const previewDiv = document.getElementById('editLastFramePreview');
+                        const previewImg = previewDiv.querySelector('.frame-preview-image');
+                        previewImg.src = data.image_url;
+                        previewDiv.style.display = 'block';
+                        previewDiv.parentElement.classList.add('has-image');
+                        showStatus('editStatus', 'Last frame uploaded!', 'success');
+                    }
                 } else {
                     throw new Error(data.error || 'Upload failed');
                 }
             } catch (error) {
-                showStatus('editStatus', 'Upload error: ' + error.message, 'error');
+                showStatus('editStatus', `Upload error (${frameType} frame): ` + error.message, 'error');
             }
         }
 
@@ -552,17 +1000,22 @@
                 return;
             }
 
-            // Use new image if uploaded, otherwise keep existing
-            const imageUrl = editUploadedImageUrl || deck.cards.find(c => c.id === cardId).image_url;
-            const imageFilename = editUploadedImageFilename || deck.cards.find(c => c.id === cardId).image_filename;
+            // Use new images if uploaded, otherwise keep existing
+            const card = deck.cards.find(c => c.id === cardId);
+            const firstFrameUrl = editUploadedFirstFrameUrl || card.first_frame_url || card.image_url;
+            const firstFrameFilename = editUploadedFirstFrameFilename || card.first_frame_filename || card.image_filename;
+            const lastFrameUrl = editUploadedLastFrameUrl !== null ? editUploadedLastFrameUrl : (card.last_frame_url || null);
+            const lastFrameFilename = editUploadedLastFrameFilename || card.last_frame_filename || null;
 
             try {
                 const response = await fetch(`/api/decks/${deckId}/cards/${cardId}`, {
                     method: 'PUT',
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({
-                        image_url: imageUrl,
-                        image_filename: imageFilename,
+                        first_frame_url: firstFrameUrl,
+                        first_frame_filename: firstFrameFilename,
+                        last_frame_url: lastFrameUrl,
+                        last_frame_filename: lastFrameFilename,
                         prompt: prompt
                     })
                 });
@@ -625,6 +1078,131 @@
                 }, 3000);
             }
         }
+
+        async function generateDeck(deckId) {
+            if (!confirm('Generate 2 videos for each scene in this video project?')) {
+                return;
+            }
+
+            const generateBtn = document.getElementById('generateDeckBtn');
+            if (generateBtn) {
+                generateBtn.disabled = true;
+                generateBtn.textContent = '⏳ Generating...';
+            }
+
+            try {
+                const response = await fetch(`/api/decks/${deckId}/generate`, {
+                    method: 'POST'
+                });
+
+                const data = await response.json();
+
+                if (data.success) {
+                    showStatus('cardStatus', `Generation started! ${data.task_count} videos will be generated (2 per scene).`, 'success');
+                    // Update deck status in UI
+                    const deckStatusElement = document.getElementById('deckStatus');
+                    if (deckStatusElement) {
+                        deckStatusElement.textContent = 'generating';
+                    }
+                    // Reload deck to show updated status
+                    setTimeout(() => {
+                        loadDeck();
+                        // Start auto-checking status if cards exist
+                        if (deck && deck.cards && deck.cards.length > 0) {
+                            startStatusChecking(deckId);
+                        }
+                    }, 1000);
+                } else {
+                    if (generateBtn) {
+                        generateBtn.disabled = false;
+                        generateBtn.textContent = '🎬 Generate Videos';
+                    }
+                    showStatus('cardStatus', 'Error: ' + (data.error || 'Failed to start generation'), 'error');
+                }
+            } catch (error) {
+                if (generateBtn) {
+                    generateBtn.disabled = false;
+                    generateBtn.textContent = '🎬 Generate Videos';
+                }
+                showStatus('cardStatus', 'Error: ' + error.message, 'error');
+            }
+        }
+
+        let statusCheckInterval = null;
+
+        function startStatusChecking(deckId) {
+            // Clear any existing interval
+            if (statusCheckInterval) {
+                clearInterval(statusCheckInterval);
+            }
+
+            // Check status every 15 seconds
+            statusCheckInterval = setInterval(async () => {
+                try {
+                    const response = await fetch(`/api/decks/${deckId}/check-status`, {
+                        method: 'POST'
+                    });
+
+                    const data = await response.json();
+
+                    if (data.success) {
+                        // Update deck status if it changed
+                        const deckStatusElement = document.getElementById('deckStatus');
+                        const generateBtn = document.getElementById('generateDeckBtn');
+                        
+                        if (data.deck) {
+                            const newStatus = data.deck.status || 'draft';
+                            
+                            if (deckStatusElement) {
+                                deckStatusElement.textContent = newStatus;
+                            }
+                            
+                            // If generation is complete, stop checking and re-enable button
+                            if (newStatus !== 'generating' && generateBtn) {
+                                generateBtn.disabled = false;
+                                generateBtn.textContent = '🎬 Generate Videos';
+                                clearInterval(statusCheckInterval);
+                                statusCheckInterval = null;
+                            }
+                            
+                            // Reload deck to show any new videos
+                            if (data.updated_videos > 0) {
+                                loadDeck();
+                            }
+                        }
+                    }
+                } catch (error) {
+                    console.error('Error checking deck status:', error);
+                }
+            }, 15000); // Check every 15 seconds
+
+            // Also check immediately
+            setTimeout(() => {
+                fetch(`/api/decks/${deckId}/check-status`, {
+                    method: 'POST'
+                }).then(response => response.json())
+                  .then(data => {
+                      if (data.success && data.deck) {
+                          const newStatus = data.deck.status || 'draft';
+                          const deckStatusElement = document.getElementById('deckStatus');
+                          if (deckStatusElement) {
+                              deckStatusElement.textContent = newStatus;
+                          }
+                          if (data.updated_videos > 0) {
+                              loadDeck();
+                          }
+                      }
+                  })
+                  .catch(error => console.error('Error checking deck status:', error));
+            }, 2000);
+        }
+
+        // Stop status checking when leaving the page
+        window.addEventListener('beforeunload', () => {
+            if (statusCheckInterval) {
+                clearInterval(statusCheckInterval);
+            }
+        });
     </script>
 </body>
 </html>
