@@ -236,14 +236,25 @@ def generate_video():
         data = request.json
         
         # Validate required fields
-        if not data or not data.get('image_url'):
-            return jsonify({'error': 'Image URL is required'}), 400
+        image_url_raw = data.get('image_url')
+        image_url = image_url_raw.strip() if (image_url_raw and isinstance(image_url_raw, str)) else ''  # Backward compatibility
+        first_frame_url_raw = data.get('first_frame_url')
+        first_frame_url = first_frame_url_raw.strip() if (first_frame_url_raw and isinstance(first_frame_url_raw, str)) else ''
+        
+        # Use image_url as fallback if first_frame_url is not provided
+        if not first_frame_url and image_url:
+            first_frame_url = image_url
+        
+        if not data or not first_frame_url:
+            return jsonify({'error': 'Image URL or first frame URL is required'}), 400
         if not data.get('prompt'):
             return jsonify({'error': 'Prompt is required'}), 400
         
         # Extract parameters
-        image_url = data['image_url']
         image_filename = data.get('image_filename', '')
+        first_frame_filename = data.get('first_frame_filename', '') or image_filename
+        last_frame_url_raw = data.get('last_frame_url')
+        last_frame_url = last_frame_url_raw.strip() if (last_frame_url_raw and isinstance(last_frame_url_raw, str)) else None
         prompt = data['prompt']
         aspect_ratio = data.get('aspect_ratio', Config.DEFAULT_ASPECT_RATIO)
         model = data.get('model', Config.DEFAULT_MODEL)
@@ -253,8 +264,10 @@ def generate_video():
         # Generate video
         result = video_service.generate_video(
             prompt=prompt,
-            image_url=image_url,
+            image_url=image_url,  # Keep for backward compatibility
             image_filename=image_filename,
+            first_frame_url=first_frame_url,
+            last_frame_url=last_frame_url,
             aspect_ratio=aspect_ratio,
             model=model,
             seeds=seeds,
@@ -410,7 +423,8 @@ def create_deck():
     logger.info("[API] Creating new deck")
     try:
         data = request.json or {}
-        deck_name = data.get('name', '').strip()
+        deck_name_raw = data.get('name')
+        deck_name = deck_name_raw.strip() if (deck_name_raw and isinstance(deck_name_raw, str)) else ''
         aspect_ratio = data.get('aspect_ratio', Config.DEFAULT_ASPECT_RATIO)
         
         new_deck = deck_service.create_deck(deck_name, aspect_ratio)
@@ -497,24 +511,47 @@ def delete_deck(deck_id):
 @app.route('/api/decks/<deck_id>/cards', methods=['POST'])
 def add_card_to_deck(deck_id):
     """Add a card to a deck."""
+    logger.info(f"[API] Adding card to deck: {deck_id[:8]}...")
     try:
         data = request.json or {}
-        image_url = data.get('image_url', '').strip()
-        prompt = data.get('prompt', '').strip()
-        image_filename = data.get('image_filename', '')
+        
+        # New format: first_frame_url and last_frame_url
+        first_frame_url_raw = data.get('first_frame_url')
+        first_frame_url = first_frame_url_raw.strip() if (first_frame_url_raw and isinstance(first_frame_url_raw, str)) else ''
+        first_frame_filename = data.get('first_frame_filename') or ''
+        last_frame_url_raw = data.get('last_frame_url')
+        last_frame_url = last_frame_url_raw.strip() if (last_frame_url_raw and isinstance(last_frame_url_raw, str)) else None
+        last_frame_filename = data.get('last_frame_filename') or None
+        
+        # Backward compatibility: if image_url is provided, use it as first_frame_url
+        if not first_frame_url:
+            image_url_raw = data.get('image_url')
+            if image_url_raw:
+                first_frame_url = image_url_raw.strip() if isinstance(image_url_raw, str) else ''
+        if not first_frame_filename:
+            first_frame_filename = data.get('image_filename') or ''
+        
+        prompt_raw = data.get('prompt')
+        prompt = prompt_raw.strip() if (prompt_raw and isinstance(prompt_raw, str)) else ''
+        
+        logger.debug(f"[API] Card data - first_frame_url: {first_frame_url[:50] if first_frame_url else 'None'}..., last_frame_url: {last_frame_url[:50] if last_frame_url else 'None'}..., prompt: {prompt[:50] if prompt else 'None'}...")
         
         card = deck_service.add_card_to_deck(
             deck_id,
-            image_url,
-            prompt,
-            image_filename
+            first_frame_url=first_frame_url,
+            prompt=prompt,
+            first_frame_filename=first_frame_filename,
+            last_frame_url=last_frame_url,
+            last_frame_filename=last_frame_filename
         )
         
+        logger.info(f"[API] Card added successfully to deck: {deck_id[:8]}...")
         return jsonify({
             'success': True,
             'card': card
         })
     except ValueError as e:
+        logger.warning(f"[API] Validation error adding card to deck {deck_id[:8]}...: {e}")
         return jsonify({'error': str(e)}), 400
     except Exception as e:
         logger.error(f"Error adding card: {e}", exc_info=True)
@@ -527,12 +564,30 @@ def update_card(deck_id, card_id):
     try:
         data = request.json or {}
         
+        # New format: first_frame_url and last_frame_url
+        first_frame_url_raw = data.get('first_frame_url')
+        first_frame_url = first_frame_url_raw.strip() if first_frame_url_raw else None
+        first_frame_filename = data.get('first_frame_filename') or None
+        last_frame_url_raw = data.get('last_frame_url')
+        last_frame_url = last_frame_url_raw.strip() if (last_frame_url_raw and isinstance(last_frame_url_raw, str)) else None
+        last_frame_filename = data.get('last_frame_filename') or None
+        
+        # Backward compatibility: if image_url is provided, use it as first_frame_url
+        if not first_frame_url:
+            image_url_raw = data.get('image_url')
+            if image_url_raw:
+                first_frame_url = image_url_raw.strip() if isinstance(image_url_raw, str) else None
+        if not first_frame_filename:
+            first_frame_filename = data.get('image_filename')
+        
         card = deck_service.update_card(
             deck_id,
             card_id,
-            image_url=data.get('image_url'),
             prompt=data.get('prompt'),
-            image_filename=data.get('image_filename')
+            first_frame_url=first_frame_url,
+            first_frame_filename=first_frame_filename,
+            last_frame_url=last_frame_url,
+            last_frame_filename=last_frame_filename
         )
         
         if not card:
@@ -639,6 +694,9 @@ def get_deck_videos(deck_id):
         all_failed = []
         
         for card_index, card in enumerate(deck.get('cards', [])):
+            # Get card image URL (prefer first_frame_url, fallback to image_url for backward compatibility)
+            card_image_url = card.get('first_frame_url') or card.get('image_url', '')
+            
             # Add successful videos
             approved_videos = card.get('approved_videos', [])
             for video_url in card.get('video_urls', []):
@@ -646,7 +704,7 @@ def get_deck_videos(deck_id):
                     'card_id': card['id'],
                     'card_index': card_index,
                     'card_prompt': card['prompt'],
-                    'card_image_url': card['image_url'],
+                    'card_image_url': card_image_url,
                     'video_url': video_url,
                     'approved': video_url in approved_videos,
                     'created_at': card.get('created_at', ''),
@@ -660,7 +718,7 @@ def get_deck_videos(deck_id):
                     'card_id': card['id'],
                     'card_index': card_index,
                     'card_prompt': card['prompt'],
-                    'card_image_url': card['image_url'],
+                    'card_image_url': card_image_url,
                     'error': failed_detail.get('error', 'Unknown error'),
                     'task_id': failed_detail.get('task_id', ''),
                     'video_number': failed_detail.get('video_number', 0),
@@ -691,8 +749,10 @@ def approve_video(deck_id):
     logger.info(f"[API] Approving video for deck: {deck_id[:8]}...")
     try:
         data = request.json or {}
-        video_url = data.get('video_url', '').strip()
-        card_id = data.get('card_id', '').strip()
+        video_url_raw = data.get('video_url')
+        video_url = video_url_raw.strip() if (video_url_raw and isinstance(video_url_raw, str)) else ''
+        card_id_raw = data.get('card_id')
+        card_id = card_id_raw.strip() if (card_id_raw and isinstance(card_id_raw, str)) else ''
         
         if not video_url:
             return jsonify({'error': 'Video URL is required'}), 400
@@ -754,8 +814,10 @@ def unapprove_video(deck_id):
     logger.info(f"[API] Unapproving video for deck: {deck_id[:8]}...")
     try:
         data = request.json or {}
-        video_url = data.get('video_url', '').strip()
-        card_id = data.get('card_id', '').strip()
+        video_url_raw = data.get('video_url')
+        video_url = video_url_raw.strip() if (video_url_raw and isinstance(video_url_raw, str)) else ''
+        card_id_raw = data.get('card_id')
+        card_id = card_id_raw.strip() if (card_id_raw and isinstance(card_id_raw, str)) else ''
         
         if not video_url:
             return jsonify({'error': 'Video URL is required'}), 400
